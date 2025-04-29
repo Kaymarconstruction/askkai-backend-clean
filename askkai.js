@@ -17,12 +17,17 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
+// Debug route — use to check if OPENAI_API_KEY is loaded
+app.get('/debug', (req, res) => {
+  res.send(`Key loaded: ${process.env.OPENAI_API_KEY ? "Yes" : "No"}`);
+});
+
 // Welcome route
 app.get('/', (req, res) => {
   res.send('Ask Kai GPT backend is running!');
 });
 
-// Handle user prompts
+// Handle POST questions
 app.post('/ask', async (req, res) => {
   const { prompt } = req.body;
 
@@ -32,11 +37,11 @@ app.post('/ask', async (req, res) => {
 
   try {
     const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo", // Using 3.5 for compatibility
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "You are Kai Marlow — a friendly Aussie tradie with 20+ years experience. Give fast, practical advice in clear, down-to-earth language."
+          content: "You are Kai Marlow — a friendly Aussie tradie with 20+ years of experience. Give fast, practical advice in clear, confident language."
         },
         {
           role: "user",
@@ -56,7 +61,7 @@ app.post('/ask', async (req, res) => {
   }
 });
 
-// Start server
+// Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
