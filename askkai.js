@@ -17,7 +17,7 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Debug route — use to check if OPENAI_API_KEY is loaded
+// Debug route — check if API key is loaded
 app.get('/debug', (req, res) => {
   res.send(`Key loaded: ${process.env.OPENAI_API_KEY ? "Yes" : "No"}`);
 });
@@ -56,7 +56,11 @@ app.post('/ask', async (req, res) => {
     res.json({ reply: gptReply });
 
   } catch (error) {
-    console.error('OpenAI error:', error.response?.data || error.message);
+    if (error.response) {
+      console.error('OpenAI response error:', error.response.status, error.response.data);
+    } else {
+      console.error('OpenAI general error:', error.message);
+    }
     res.status(500).json({ reply: "Kai had trouble thinking — try again shortly." });
   }
 });
