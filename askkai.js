@@ -6,13 +6,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// OpenAI config
+// OpenAI setup
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
   });
   const openai = new OpenAIApi(configuration);
 
-  // Health check
   app.get('/health', (req, res) => {
     res.status(200).send('OK');
     });
@@ -30,11 +29,11 @@ const configuration = new Configuration({
 
                   try {
                       const response = await openai.createChatCompletion({
-                            model: "gpt-4",
+                            model: "gpt-3.5-turbo", // Switched to 3.5
                                   messages: [
                                           {
                                                     role: "system",
-                                                              content: "You are Kai Marlow — a friendly Aussie tradie with 20+ years experience giving fast, practical building advice. Answer clearly and confidently."
+                                                              content: "You are Kai Marlow — a friendly Aussie tradie with 20+ years experience. Give fast, practical advice in clear and confident language."
                                                                       },
                                                                               {
                                                                                         role: "user",
@@ -59,4 +58,3 @@ const configuration = new Configuration({
                                                                                                                                                       console.log(`Ask Kai backend running on port ${PORT}`);
                                                                                                                                                       });
                                                                                                                                                       
-
