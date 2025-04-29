@@ -6,7 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// OpenAI setup
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -17,37 +16,28 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Debug route — check if API key is loaded
+// Debug route — optional
 app.get('/debug', (req, res) => {
   res.send(`Key loaded: ${process.env.OPENAI_API_KEY ? "Yes" : "No"}`);
 });
 
-// Welcome route
+// Home route
 app.get('/', (req, res) => {
   res.send('Ask Kai GPT backend is running!');
 });
 
-// Handle POST questions
+// Handle POST request with full conversation
 app.post('/ask', async (req, res) => {
-  const { prompt } = req.body;
+  const { messages } = req.body;
 
-  if (!prompt) {
-    return res.status(400).json({ reply: "No prompt received." });
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ reply: "No messages history received." });
   }
 
   try {
     const response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are Kai Marlow — a friendly Aussie tradie with 20+ years of experience. Give fast, practical advice in clear, confident language."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
+      messages: messages,
       temperature: 0.7,
       max_tokens: 500
     });
