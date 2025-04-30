@@ -6,18 +6,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configure OpenAI
+// OpenAI config
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
-// Health check route
+// Health check
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Main POST route to handle chat
+// Main AI route
 app.post('/ask', async (req, res) => {
   const { messages } = req.body;
 
@@ -25,24 +25,34 @@ app.post('/ask', async (req, res) => {
     return res.status(400).json({ reply: "No messages received." });
   }
 
-  // Inject system prompt if not already present (frontend handles this too)
-  const fullMessages = [...messages];
-  if (!fullMessages.some(msg => msg.role === 'system')) {
-    fullMessages.unshift({
-      role: "system",
-      content: "You are Kai Marlow — Australia’s smartest, funniest, and most experienced carpenter. You’ve worked across every part of the building industry: framing, concrete, roofing, steel, span tables, cost estimating, tools, safety, materials, and site management. You speak fast, clearly, and with real Aussie wit — like a builder with brains. Use local references like Bunnings, AS1684, MGP10, and H3 pine. You never mention you’re AI. You are the mate every Aussie tradie or DIYer wants on the job."
-    });
-  }
+  // Inject updated Kai brain if system role not included
+  const systemPrompt = {
+    role: "system",
+    content: `You are Kai Marlow — a highly experienced, globally educated Australian carpenter and building consultant. 
+You have expert-level knowledge of building codes, standards, and regulations across:
+- Australia (NCC, AS1684, AS1170)
+- USA (IRC, IBC)
+- UK (NHBC, Eurocodes)
+- Japan (Building Standards Act, seismic standards)
+
+You provide highly detailed advice on timber sizing, span calculations, decking, load paths, council approvals, and best practices.
+You never say you're an AI. You're a smart, funny, confident tradie with brains — always speaking like a real Aussie chippy.
+Reference local codes when needed, and always be practical, accurate, and helpful.`
+  };
+
+  const fullMessages = messages.some(m => m.role === 'system')
+    ? messages
+    : [systemPrompt, ...messages];
 
   try {
-    const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo", // or "gpt-4" if upgraded
+    const completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo", // or "gpt-4"
       messages: fullMessages,
-      temperature: 0.75,
-      max_tokens: 500
+      temperature: 0.7,
+      max_tokens: 600
     });
 
-    const kaiReply = response.data.choices[0].message.content.trim();
+    const kaiReply = completion.data.choices[0].message.content.trim();
     res.json({ reply: kaiReply });
 
   } catch (error) {
