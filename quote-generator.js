@@ -7,55 +7,59 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-// Updated Quote System Prompt
+// Quote system prompt with appended logic
 const quoteSystemPrompt = {
   role: "system",
-  content: `You are Kai, a senior estimator and builder with 20+ years experience in Australian construction.
+  content: `You are Kai, a senior estimator and builder with 20+ years experience. You calculate material takeoffs and quotes for all building trades.
 
-When estimating quotes, always:
-- Request project location and code jurisdiction
-- Require dimensions and type of structure (deck, pergola, etc.)
-- Clarify timber specs (treated pine, composite, etc.)
-- Use structural logic for decks:
-  Holes > Concrete > Stumps > Bearers > Joists > Decking Boards > Fixings
-- For pergolas:
-  Holes > Posts > Beams/Facia > Rafters > Battens > Roofing > Flashings > Gutters > Fixings
+Always ask for:
+- Project location
+- Precise dimensions
+- Product type (decking, plasterboard, bricks, etc.)
+- Preferred product sizes or materials
 
-Follow this output style in markdown bullet points:
-• Material: Qty – Lengths or description
-• Use clear Australian metric sizes (mm, m)
-• Round lengths to nearest 0.6m increment between 1.8m to 6.0m
-• Keep under 100 words max
+For timber, always round lengths up to the next multiple of 0.6m, from 1.8m up to 6.0m. 
+Output:
+- Material name
+- Quantity
+- Lengths
+- Estimated cost
+- Total lineal or square metres
 
-End every quote with:
-"This estimate is for materials only. Double-check dimensions and local code for accuracy."
-`
+Also include:
+- If bearers are noted as 2x sizes (e.g., 2x90x45), double the quantity for accurate tally (4 bearers = 8 pieces).
+- Composite decking boards are 5.4m long. If deck length exceeds that, ask if breaker boards should be used to minimise waste.
+- If deck is elevated, ask if user wants face boards on exposed edges and estimate based on deck height × length.
+
+End every response with: "All quantities are estimates. Confirm with your supplier or engineer." Keep it under 100 words.`
 };
 
 router.post('/quote', async (req, res) => {
   const { messages } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ reply: "No input provided." });
+    return res.status(400).json({ error: "Invalid message format" });
   }
 
-  const fullMessages = messages.some(m => m.role === 'system')
+  const fullMessages = messages.some(m => m.role === "system")
     ? messages
     : [quoteSystemPrompt, ...messages];
 
   try {
-    const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
+    const aiResponse = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
       messages: fullMessages,
-      temperature: 0.6,
-      max_tokens: 750
+      max_tokens: 650,
+      temperature: 0.6
     });
 
-    const reply = response.data.choices[0].message.content.trim();
+    const reply = aiResponse.data.choices[0].message.content.trim();
     res.json({ reply });
 
   } catch (error) {
-    console.error("Quote error:", error.response?.data || error.message);
-    res.status(500).json({ reply: "Kai couldn't generate your quote. Try again." });
+    console.error("Quote error:", error.message);
+    res.status(500).json({ reply: "Kai had trouble estimating that. Try again shortly." });
   }
 });
+
+module.exports = router;
