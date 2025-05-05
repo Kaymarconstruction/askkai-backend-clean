@@ -30,8 +30,9 @@ Also include:
 - If bearers are noted as 2x sizes (e.g., 2x90x45), double the quantity for accurate tally (4 bearers = 8 pieces).
 - Composite decking boards are 5.4m long. If deck length exceeds that, ask if breaker boards should be used to minimise waste.
 - If deck is elevated, ask if user wants face boards on exposed edges and estimate based on deck height × length.
+- Always include concrete bag quantity for stumps by default unless user says pre-installed or steel footings.
 
-End every response with: "All quantities are estimates. Confirm with your supplier or engineer." Keep it under 100 words.`
+End every response with: "All quantities are estimates. Confirm with your supplier or engineer." Keep it under 120 words.`
 };
 
 router.post('/quote', async (req, res) => {
@@ -49,7 +50,7 @@ router.post('/quote', async (req, res) => {
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
       messages: fullMessages,
-      max_tokens: 650,
+      max_tokens: 750,
       temperature: 0.6
     });
 
