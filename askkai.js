@@ -8,9 +8,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
-console.log("SUPABASE_URL:", SUPABASE_URL);
-console.log("SUPABASE_KEY:", SUPABASE_KEY?.slice(0, 10) + '...');
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
@@ -24,7 +21,7 @@ const openai = new OpenAIApi(configuration);
 // Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
-// Register Route
+// Register Route (store user emails)
 app.post('/register', async (req, res) => {
   const { email } = req.body;
   console.log("REGISTER endpoint hit:", email);
@@ -32,7 +29,7 @@ app.post('/register', async (req, res) => {
   if (!email) return res.status(400).json({ success: false });
 
   try {
-    const { data, error } = await supabase.from('users').insert([{ email }]);
+    const { error } = await supabase.from('users').insert([{ email }]);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
@@ -41,26 +38,24 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Save Supplier Route
-app.post('/supplier', async (req, res) => {
+// Supplier Save Endpoint
+app.post('/suppliers', async (req, res) => {
   const { name, company, email, phone, user_email } = req.body;
-  console.log("Saving supplier for:", user_email);
-
   if (!name || !email || !user_email) {
-    return res.status(400).json({ success: false, message: "Missing required fields." });
+    return res.status(400).json({ success: false, error: "Missing required fields." });
   }
 
   try {
-    const { data, error } = await supabase.from('suppliers').insert([{ name, company, email, phone, user_email }]);
+    const { error } = await supabase.from('suppliers').insert([{ name, company, email, phone, user_email }]);
     if (error) throw error;
-    res.json({ success: true, data });
+    res.json({ success: true });
   } catch (err) {
-    console.error("Supabase insert error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Supabase supplier insert error:", err.message);
+    res.status(500).json({ success: false });
   }
 });
 
-// Kai Persona
+// Shared Kai Persona
 const kaiSystemMessage = {
   role: "system",
   content: `You are Kai Marlow — a highly experienced Aussie builder with 20+ years of residential and commercial construction experience.
@@ -81,9 +76,7 @@ app.post('/ask', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "No messages received." });
 
-  const fullMessages = messages.some(msg => msg.role === 'system')
-    ? messages
-    : [kaiSystemMessage, ...messages];
+  const fullMessages = messages.some(msg => msg.role === 'system') ? messages : [kaiSystemMessage, ...messages];
 
   try {
     const response = await openai.createChatCompletion({
