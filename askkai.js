@@ -17,17 +17,29 @@ app.use(express.json());
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
 const openai = new OpenAIApi(configuration);
 
-const sessions = {}; // memory-based chat session history
+const sessions = {}; // In-memory chat sessions
+
+const kaiSystemMessage = {
+  role: "system",
+  content: `You are Kai Marlow — an AI-powered site assistant and quoting estimator with deep building knowledge.
+
+Rules:
+- Ask for user's location, project type, and code jurisdiction early.
+- Use metric units (mm, m², m³).
+- Mention applicable Australian codes (AS1684, NCC).
+- Advise on timber, fasteners, and layout logic.
+- Keep answers under 60 words unless quoting.
+- Never say you're AI — you are Kai.`
+};
 
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
 app.post('/register', async (req, res) => {
   const { email } = req.body;
-  console.log("REGISTER endpoint hit:", email);
   if (!email) return res.status(400).json({ success: false });
 
   try {
-    const { data, error } = await supabase.from('users').insert([{ email }]);
+    const { error } = await supabase.from('users').insert([{ email }]);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
@@ -36,44 +48,27 @@ app.post('/register', async (req, res) => {
   }
 });
 
-const kaiSystemMessage = {
-  role: "system",
-  content: `You are Kai Marlow — a highly experienced Aussie builder with 20+ years of residential and commercial construction experience.
-
-Your responses must:
-- Ask for the user's location, code jurisdiction, and project type if not given
-- Use metric units (mm, m, m², m³)
-- Reference Australian codes (NCC, AS1684, AS1170)
-- Be clear, practical, and 20–80 words long
-- Suggest timber sizes (90x45, 140x45, MGP10, H3, etc.)
-- Understand concrete/boards/timber come in standard sizes (2.4m–6.0m)
-- Ask clarifying questions if the user doesn't provide enough info
-- Never say you're an AI — you are Kai, a site-ready trades assistant.`
-};
-
 app.post('/ask', async (req, res) => {
   const { sessionId, message } = req.body;
   if (!sessionId || !message) return res.status(400).json({ reply: "Missing session or message." });
 
-  if (!sessions[sessionId]) {
-    sessions[sessionId] = [kaiSystemMessage];
-  }
-  sessions[sessionId].push({ role: 'user', content: message });
+  if (!sessions[sessionId]) sessions[sessionId] = [kaiSystemMessage];
+  sessions[sessionId].push({ role: "user", content: message });
 
   try {
     const response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: sessions[sessionId],
-      temperature: 0.7,
+      temperature: 0.6,
       max_tokens: 750
     });
 
-    const kaiReply = response.data.choices[0].message.content.trim();
-    sessions[sessionId].push({ role: 'assistant', content: kaiReply });
-    res.json({ reply: kaiReply });
+    const reply = response.data.choices[0].message.content.trim();
+    sessions[sessionId].push({ role: "assistant", content: reply });
+    res.json({ reply });
   } catch (error) {
     console.error("Kai error:", error.response?.data || error.message);
-    res.status(500).json({ reply: "Something went wrong. Try again later." });
+    res.status(500).json({ reply: "Kai had a problem. Try again soon." });
   }
 });
 
@@ -83,19 +78,14 @@ app.post('/quote', async (req, res) => {
 
   const quotePrompt = {
     role: "system",
-    content: `You are Kai Marlow, a quoting and estimating expert for Australian building trades.
+    content: `You are Kai Marlow, an AI quote assistant.
 
-Always clarify:
-- Location
-- Deck type or structure type
-- Timber specs
-- Board width
-- Whether elevation or face boards are needed
-- Composite board lengths (use 5.4m)
-- Ask if breaker boards are needed for longer decks
-
-Use dot point format:
-• Item – Qty – Description`
+Estimate:
+- Timber, concrete, fasteners
+- Composite decking = 5.4m, timber = 2.4–6.0m
+- Use bullet points (• Item: Qty – Description)
+- Follow AS1684 framing and NCC codes
+- End with: All quantities are estimates. Confirm with supplier.`
   };
 
   try {
@@ -118,6 +108,4 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Ask Kai backend running on port ${PORT}`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Ask Kai backend running on port ${PORT}`));
