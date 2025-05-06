@@ -14,22 +14,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// OpenAI Setup
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
 const openai = new OpenAIApi(configuration);
 
-// Health Check
+const sessions = {}; // memory-based chat session history
+
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
-// Register Route (store user emails)
 app.post('/register', async (req, res) => {
   const { email } = req.body;
   console.log("REGISTER endpoint hit:", email);
-
   if (!email) return res.status(400).json({ success: false });
 
   try {
-    const { error } = await supabase.from('users').insert([{ email }]);
+    const { data, error } = await supabase.from('users').insert([{ email }]);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
@@ -38,24 +36,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Supplier Save Endpoint
-app.post('/suppliers', async (req, res) => {
-  const { name, company, email, phone, user_email } = req.body;
-  if (!name || !email || !user_email) {
-    return res.status(400).json({ success: false, error: "Missing required fields." });
-  }
-
-  try {
-    const { error } = await supabase.from('suppliers').insert([{ name, company, email, phone, user_email }]);
-    if (error) throw error;
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Supabase supplier insert error:", err.message);
-    res.status(500).json({ success: false });
-  }
-});
-
-// Shared Kai Persona
 const kaiSystemMessage = {
   role: "system",
   content: `You are Kai Marlow — a highly experienced Aussie builder with 20+ years of residential and commercial construction experience.
@@ -71,29 +51,32 @@ Your responses must:
 - Never say you're an AI — you are Kai, a site-ready trades assistant.`
 };
 
-// POST: /ask
 app.post('/ask', async (req, res) => {
-  const { messages } = req.body;
-  if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "No messages received." });
+  const { sessionId, message } = req.body;
+  if (!sessionId || !message) return res.status(400).json({ reply: "Missing session or message." });
 
-  const fullMessages = messages.some(msg => msg.role === 'system') ? messages : [kaiSystemMessage, ...messages];
+  if (!sessions[sessionId]) {
+    sessions[sessionId] = [kaiSystemMessage];
+  }
+  sessions[sessionId].push({ role: 'user', content: message });
 
   try {
     const response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      messages: fullMessages,
+      messages: sessions[sessionId],
       temperature: 0.7,
       max_tokens: 750
     });
 
-    res.json({ reply: response.data.choices[0].message.content.trim() });
+    const kaiReply = response.data.choices[0].message.content.trim();
+    sessions[sessionId].push({ role: 'assistant', content: kaiReply });
+    res.json({ reply: kaiReply });
   } catch (error) {
     console.error("Kai error:", error.response?.data || error.message);
     res.status(500).json({ reply: "Something went wrong. Try again later." });
   }
 });
 
-// POST: /quote
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "No input provided." });
@@ -111,8 +94,8 @@ Always clarify:
 - Composite board lengths (use 5.4m)
 - Ask if breaker boards are needed for longer decks
 
-Use markdown format:
-- Item: Qty – Description`
+Use dot point format:
+• Item – Qty – Description`
   };
 
   try {
@@ -130,12 +113,10 @@ Use markdown format:
   }
 });
 
-// Stripe webhook placeholder
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   res.status(200).send('Webhook received');
 });
 
-// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
