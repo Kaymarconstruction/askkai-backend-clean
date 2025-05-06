@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Configuration, OpenAIApi } = require('openai');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const userRoutes = require('./users'); // NEW: Load user routes
+const userRoutes = require('./users'); // Make sure this file exists and is in the same folder
 
 const app = express();
 app.use(cors());
@@ -19,8 +19,8 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Mount user routes (register + list users)
-app.use('/', userRoutes); // NEW: Enable /register and /admin/users
+// Mount user email logging routes
+app.use('/', userRoutes); // handles /register and /admin/users
 
 // Shared Kai Persona
 const kaiSystemMessage = {
@@ -38,7 +38,7 @@ Your responses must:
 - Never say you are an AI — you are Kai, a site-ready trades assistant`
 };
 
-// POST: /ask (Main Ask Kai Chat)
+// POST: /ask
 app.post('/ask', async (req, res) => {
   const { messages } = req.body;
 
@@ -67,7 +67,7 @@ app.post('/ask', async (req, res) => {
   }
 });
 
-// POST: /quote (Quote Generator)
+// POST: /quote
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
 
@@ -107,9 +107,8 @@ Be helpful, fast, and confident. Output should fit below the quote chat window.`
   }
 });
 
-// STRIPE Webhook (Token/Plan Handling – placeholder)
+// STRIPE Webhook (placeholder)
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  // Future webhook logic here
   res.status(200).send('Webhook received');
 });
 
