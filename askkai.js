@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Configuration, OpenAIApi } = require('openai');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const userRoutes = require('./users'); // NEW: Load user routes
 
 const app = express();
 app.use(cors());
@@ -17,6 +18,9 @@ const openai = new OpenAIApi(configuration);
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
+
+// Mount user routes (register + list users)
+app.use('/', userRoutes); // NEW: Enable /register and /admin/users
 
 // Shared Kai Persona
 const kaiSystemMessage = {
