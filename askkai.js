@@ -3,7 +3,12 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { Configuration, OpenAIApi } = require('openai');
+const { createClient } = require('@supabase/supabase-js');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
 app.use(cors());
@@ -16,26 +21,22 @@ const openai = new OpenAIApi(configuration);
 // Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
-// Register Route (for storing emails)
-app.post('/register', (req, res) => {
+// Register Route (for storing emails in Supabase)
+app.post('/register', async (req, res) => {
   const { email } = req.body;
   console.log("REGISTER endpoint hit:", email);
 
   if (!email) return res.status(400).json({ success: false });
 
-  const usersPath = path.join(__dirname, 'users.json');
-  let users = [];
+  try {
+    const { data, error } = await supabase.from('users').insert([{ email }]);
+    if (error) throw error;
 
-  if (fs.existsSync(usersPath)) {
-    users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Supabase insert error:", err.message);
+    res.status(500).json({ success: false });
   }
-
-  if (!users.includes(email)) {
-    users.push(email);
-    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-  }
-
-  res.json({ success: true });
 });
 
 // Shared Kai Persona (Main Chat)
