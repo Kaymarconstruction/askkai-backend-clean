@@ -24,7 +24,7 @@ const openai = new OpenAIApi(configuration);
 // Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
-// Register Route (for storing emails in Supabase)
+// Register Route
 app.post('/register', async (req, res) => {
   const { email } = req.body;
   console.log("REGISTER endpoint hit:", email);
@@ -34,7 +34,6 @@ app.post('/register', async (req, res) => {
   try {
     const { data, error } = await supabase.from('users').insert([{ email }]);
     if (error) throw error;
-
     res.json({ success: true });
   } catch (err) {
     console.error("Supabase insert error:", err.message);
@@ -42,7 +41,26 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Shared Kai Persona (Main Chat)
+// Save Supplier Route
+app.post('/supplier', async (req, res) => {
+  const { name, company, email, phone, user_email } = req.body;
+  console.log("Saving supplier for:", user_email);
+
+  if (!name || !email || !user_email) {
+    return res.status(400).json({ success: false, message: "Missing required fields." });
+  }
+
+  try {
+    const { data, error } = await supabase.from('suppliers').insert([{ name, company, email, phone, user_email }]);
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error("Supabase insert error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Kai Persona
 const kaiSystemMessage = {
   role: "system",
   content: `You are Kai Marlow — a highly experienced Aussie builder with 20+ years of residential and commercial construction experience.
@@ -101,9 +119,7 @@ Always clarify:
 - Ask if breaker boards are needed for longer decks
 
 Use markdown format:
-✓ Item: Qty – Description
-
-End with: "This estimate is for materials only. Double-check dimensions and local code for accuracy."`
+- Item: Qty – Description`
   };
 
   try {
