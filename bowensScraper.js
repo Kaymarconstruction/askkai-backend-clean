@@ -4,44 +4,82 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const scrapeBowensTimber = async () => {
-  try {
-    const url = 'https://www.bowens.com.au/products/building-supplies/timber/';
-    const { data } = await axios.get(url);
-    const $ = cheerio.load(data);
+const categoryUrls = [
+  'https://www.bowens.com.au/c/building-essentials/',
+  'https://www.bowens.com.au/c/timber/',
+  'https://www.bowens.com.au/c/decking/',
+  'https://www.bowens.com.au/c/sheeting/',
+  'https://www.bowens.com.au/c/fasteners/',
+  'https://www.bowens.com.au/c/cladding/',
+  'https://www.bowens.com.au/c/adhesives-sealants-fillers/',
+  'https://www.bowens.com.au/c/doors-jambs-frames/',
+  'https://www.bowens.com.au/c/door-window-hardware/',
+  'https://www.bowens.com.au/c/interior-lining/',
+  'https://www.bowens.com.au/c/paints-stains/',
+  'https://www.bowens.com.au/c/home-garden-products/',
+  'https://www.bowens.com.au/c/roofing/',
+  'https://www.bowens.com.au/c/plumbing-bathroom/'
+];
 
-    const materials = [];
+const scrapeBowens = async () => {
+  for (const url of categoryUrls) {
+    try {
+      const { data } = await axios.get(url);
+      const $ = cheerio.load(data);
+      const materials = [];
 
-    $('.product-item-info').each((i, el) => {
-      const name = $(el).find('.product-item-link').text().trim();
-      const priceText = $(el).find('.price').first().text().trim();
-      const priceMatch = priceText.match(/\$([\d,.]+)/);
-      const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null;
-      const url = $(el).find('.product-item-link').attr('href');
+      $('.product-item-info').each((i, el) => {
+        const name = $(el).find('.product-item-link').text().trim();
+        const priceText = $(el).find('.price').first().text().trim();
+        const priceMatch = priceText.match(/\$([\d,.]+)/);
+        const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null;
 
-      if (name && price) {
-        materials.push({
-          supplier: 'Bowens',
-          name,
-          category: 'timber',
-          unit_price: price,
-          url: url || '',
-          scraped_at: new Date().toISOString(),
-          source: 'Bowens'
-        });
+        if (name && price) {
+          materials.push({
+            supplier: 'Bowens',
+            name,
+            category: url.split('/c/')[1].replace(/\/$/, ''),
+            price_per_unit: price,
+            scraped_at: new Date().toISOString(),
+            source: url
+          });
+        }
+      });
+
+      if (materials.length > 0) {
+        const { error } = await supabase.from('materials').insert(materials);
+        if (error) throw error;
+        console.log(`Inserted ${materials.length} from ${url}`);
+      } else {
+        console.log(`No materials found at ${url}`);
       }
-    });
-
-    if (materials.length > 0) {
-      const { error } = await supabase.from('materials').insert(materials);
-      if (error) throw error;
-      console.log(`Inserted ${materials.length} materials from Bowens.`);
-    } else {
-      console.log('No materials found from Bowens.');
+    } catch (err) {
+      console.error(`Error scraping ${url}:`, err.message);
     }
-  } catch (err) {
-    console.error('Bowens scrape failed:', err.message);
   }
 };
 
-scrapeBowensTimber();
+module.exports = { scrapeBowens };
+
+
+---
+
+2. Update askkai.js Route:
+
+Make sure /scrape/bowens uses this logic.
+
+const { scrapeBowens } = require('./bowensScraper');
+
+app.post('/scrape/bowens', async (req, res) => {
+  const { email } = req.body;
+  if (email !== 'mark@kaymarconstruction.com') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    await scrapeBowens();
+    res.json({ success: true, message: 'Bowens scrape complete.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Scrape failed.', error: err.message });
+  }
+});
