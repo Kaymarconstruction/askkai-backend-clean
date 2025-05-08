@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const { Configuration, OpenAIApi } = require('openai');
 const { createClient } = require('@supabase/supabase-js');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -24,41 +26,29 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 // Register Route
 app.post('/register', async (req, res) => {
   const { email } = req.body;
+  console.log("REGISTER endpoint hit:", email);
   if (!email) return res.status(400).json({ success: false });
   try {
     const { error } = await supabase.from('users').insert([{ email }]);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error("Supabase insert error:", err.message);
+    res.status(500).json({ success: false });
   }
 });
 
-// Kai Persona
+// Shared System Message
 const kaiSystemMessage = {
   role: "system",
-  content: `You are Kai Marlow — a highly experienced Aussie builder and AI-powered trade assistant with 20+ years of residential and commercial construction experience.
-
-Your responses must:
-- Ask for the user's location, code jurisdiction, and project type if not given
-- Use metric units (mm, m, m², m³)
-- Reference Australian codes (NCC, AS1684, AS1170)
-- Provide 30–50 word guidance on build codes or council advice
-- Be clear, practical, and 20–80 words long
-- Suggest timber sizes (90x45, 140x45, MGP10, H3, etc.)
-- Understand concrete/boards/timber come in standard sizes (2.4m–6.0m)
-- Ask follow-up questions to get missing info
-- Always respond in helpful tone
-- Never say you're an AI — you are Kai.`
+  content: `You are Kai Marlow, a highly experienced Aussie builder with 20+ years in construction. Use metric units, reference Australian standards, and always provide clear, practical answers in 20-80 words.`
 };
 
-// POST: /ask
+// Chat Endpoint
 app.post('/ask', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "Missing session or message." });
-
-  const fullMessages = messages.some(msg => msg.role === 'system') ? messages : [kaiSystemMessage, ...messages];
-
+  const fullMessages = messages.some(m => m.role === 'system') ? messages : [kaiSystemMessage, ...messages];
   try {
     const response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
@@ -66,35 +56,21 @@ app.post('/ask', async (req, res) => {
       temperature: 0.7,
       max_tokens: 750
     });
-    const reply = response.data.choices[0].message.content.trim();
-    res.json({ reply });
-  } catch (error) {
+    res.json({ reply: response.data.choices[0].message.content.trim() });
+  } catch (err) {
+    console.error("Kai error:", err.response?.data || err.message);
     res.status(500).json({ reply: "Something went wrong. Try again later." });
   }
 });
 
-// POST: /quote
+// Quote Generator
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "No input provided." });
-
   const quotePrompt = {
     role: "system",
-    content: `You are Kai Marlow, a quoting and estimating expert for Australian building trades.
-
-Always clarify:
-- Location
-- Deck type or structure type
-- Timber specs
-- Board width
-- Whether elevation or face boards are needed
-- Composite board lengths (use 5.4m)
-- Ask if breaker boards are needed for longer decks
-
-Use bullet list:
-• Item: Qty – Description`
+    content: `You are Kai Marlow, quoting expert for Aussie tradies. Clarify materials, size, spacing, board width, fasteners, elevation. Format in bullet list.`
   };
-
   try {
     const response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
@@ -103,51 +79,40 @@ Use bullet list:
       max_tokens: 750
     });
     res.json({ reply: response.data.choices[0].message.content.trim() });
-  } catch (error) {
+  } catch (err) {
+    console.error("Quote error:", err.response?.data || err.message);
     res.status(500).json({ reply: "Kai couldn't generate your quote." });
   }
 });
 
-// POST: /scrape/bunnings
-app.post('/scrape/bunnings', async (req, res) => {
-  const { email } = req.body;
-  if (email !== 'mark@kaymarconstruction.com') return res.status(403).json({ success: false, message: 'Unauthorized' });
+// Scrape Bunnings
+app.get('/scrape/bunnings', async (req, res) => {
   try {
     await scrapeBunningsTimber();
-    res.json({ success: true, message: 'Bunnings scrape complete.' });
+    res.json({ success: true, source: 'Bunnings' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Scrape failed.', error: err.message });
+    console.error('Bunnings scrape failed:', err.message);
+    res.status(500).json({ success: false });
   }
 });
 
-// POST: /scrape/bowens
-app.post('/scrape/bowens', async (req, res) => {
-  const { email } = req.body;
-  if (email !== 'mark@kaymarconstruction.com') return res.status(403).json({ success: false, message: 'Unauthorized' });
+// Scrape Bowens
+app.get('/scrape/bowens', async (req, res) => {
   try {
     await scrapeBowensTimber();
-    res.json({ success: true, message: 'Bowens scrape complete.' });
+    res.json({ success: true, source: 'Bowens' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Scrape failed.', error: err.message });
+    console.error('Bowens scrape failed:', err.message);
+    res.status(500).json({ success: false });
   }
 });
 
-// GET: /materials
-app.get('/materials', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('materials').select('*');
-    if (error) throw error;
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to fetch materials.', error: err.message });
-  }
-});
-
-// Stripe webhook
+// Stripe webhook placeholder
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   res.status(200).send('Webhook received');
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Ask Kai backend running on port ${PORT}`));
-
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Ask Kai backend running on port ${PORT}`);
+});
