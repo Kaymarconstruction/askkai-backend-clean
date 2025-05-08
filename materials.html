@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Materials – Ask Kai</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-image: url('https://i.imgur.com/jhqlVA5.png');
+      background-size: cover;
+      background-position: center;
+    }
+    .overlay {
+      background-color: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="text-gray-800">
+  <div class="w-full bg-black relative">
+    <div class="absolute left-2 top-1/2 transform -translate-y-1/2 z-50">
+      <button onclick="toggleMenu()" class="bg-white text-black p-2 rounded shadow">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <div id="menuDropdown" class="hidden absolute left-0 mt-2 w-64 bg-white border border-gray-300 shadow-lg rounded-md z-50">
+        <a href="index.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Home</a>
+        <a href="materials.html" class="block px-4 py-2 text-sm text-green-600 font-bold">Materials</a>
+        <a href="quote.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Quote Generator (PRO)</a>
+        <a href="calculators.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Calculators</a>
+        <a href="settings.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Settings</a>
+        <a href="upgrade.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Upgrade</a>
+        <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log Out</button>
+      </div>
+    </div>
+    <img src="https://i.imgur.com/nDIhtRr.png" alt="Kaymar Banner" class="w-full max-h-24 object-contain mx-auto">
+  </div>
+
+  <main class="max-w-5xl mx-auto p-4 w-full">
+    <div class="overlay p-4 rounded-xl">
+      <div class="flex flex-wrap items-center space-x-4 mb-4">
+        <select id="supplierFilter" class="border rounded p-2">
+          <option value="">All Suppliers</option>
+          <option value="Bunnings">Bunnings</option>
+          <option value="Bowens">Bowens</option>
+        </select>
+        <select id="categoryFilter" class="border rounded p-2">
+          <option value="">All Categories</option>
+          <option value="timber">Timber</option>
+          <option value="screws">Screws</option>
+          <option value="cladding">Cladding</option>
+        </select>
+        <input type="text" id="searchInput" placeholder="Search material..." class="border rounded p-2">
+        <button onclick="loadMaterials()" class="bg-green-600 text-white px-4 py-2 rounded">Search</button>
+      </div>
+
+      <div id="materialsList" class="bg-white rounded-xl shadow p-4 space-y-4 text-sm text-gray-800">
+        <p>Loading materials...</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="text-center text-gray-500 text-sm p-6">
+    &copy; 2025 Kaymar Construction | Powered by Ask Kai
+    <div class="flex justify-center space-x-6 mt-2">
+      <a href="https://www.instagram.com/askkai_official" class="text-blue-600 hover:underline">Instagram</a>
+      <a href="https://www.tiktok.com/@askkai_official" class="text-blue-600 hover:underline">TikTok</a>
+      <a href="https://www.facebook.com/askkai_official" class="text-blue-600 hover:underline">Facebook</a>
+      <a href="https://www.youtube.com/@askkai_official" class="text-blue-600 hover:underline">YouTube</a>
+      <a href="https://www.threads.net/@askkai_official" class="text-blue-600 hover:underline">Threads</a>
+    </div>
+    <p class="text-xs text-gray-400 mt-2">Built with coding support from Jack Cooper</p>
+  </footer>
+
+  <script>
+    const toggleMenu = () => {
+      document.getElementById('menuDropdown').classList.toggle('hidden');
+    };
+
+    const logoutUser = () => {
+      sessionStorage.clear();
+      localStorage.clear();
+      window.location.href = 'logout.html';
+    };
+
+    async function loadMaterials() {
+      const supplier = document.getElementById('supplierFilter').value;
+      const category = document.getElementById('categoryFilter').value;
+      const query = document.getElementById('searchInput').value.trim();
+
+      let url = 'https://askkai-backend-clean.onrender.com/materials?';
+      if (supplier) url += `supplier=${encodeURIComponent(supplier)}&`;
+      if (category) url += `category=${encodeURIComponent(category)}&`;
+      if (query) url += `q=${encodeURIComponent(query)}`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const list = document.getElementById('materialsList');
+      list.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        list.innerHTML = '<p>No materials found.</p>';
+        return;
+      }
+
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'border-b pb-2';
+        card.innerHTML = `<strong>${item.name}</strong> – $${item.price_per_unit} <em>(${item.category}) from ${item.supplier}</em>`;
+        list.appendChild(card);
+      });
+    }
+
+    loadMaterials();
+  </script>
+</body>
+</html>
