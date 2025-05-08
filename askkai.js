@@ -153,8 +153,3 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
 });
 
-
-The full updated askkai.js code is now ready and deployed to canvas.
-
-a. Would you like a test command to trigger both scrapers manually from Postman or fetch? b. Ready to build a basic frontend preview page for the materials database?
-
