@@ -5,6 +5,7 @@ const path = require('path');
 const { Configuration, OpenAIApi } = require('openai');
 const { createClient } = require('@supabase/supabase-js');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { scrapeBunningsTimber } = require('./bunningsScraper');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -113,6 +114,21 @@ Use bullet list:
   } catch (error) {
     console.error("Quote error:", error.response?.data || error.message);
     res.status(500).json({ reply: "Kai couldn't generate your quote." });
+  }
+});
+
+// POST: /scrape/bunnings (admin-only)
+app.post('/scrape/bunnings', async (req, res) => {
+  const { email } = req.body;
+  if (email !== 'mark@kaymarconstruction.com') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    await scrapeBunningsTimber();
+    res.json({ success: true, message: 'Scrape complete.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Scrape failed.', error: err.message });
   }
 });
 
