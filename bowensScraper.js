@@ -21,9 +21,14 @@ const scrapeBowensTimber = async () => {
       if (name && price) {
         materials.push({
           supplier: 'Bowens',
-          name,
           category: 'timber',
-          price_per_unit: price
+          name,
+          description: null,
+          unit: null,
+          unit_price: price,
+          url,
+          source: 'Bowens',
+          scraped_at: new Date().toISOString(),
         });
       }
     });
@@ -38,4 +43,3 @@ const scrapeBowensTimber = async () => {
   } catch (err) {
     console.error('Bowens scrape failed:', err.message);
   }
-};
