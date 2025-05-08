@@ -15,8 +15,7 @@ const scrapeBunningsTimber = async () => {
     $('.product-title').each((i, el) => {
       const name = $(el).text().trim();
       const priceEl = $(el).closest('.product-container').find('.price');
-      const price = priceEl.text().replace(/[^
-\d.]/g, '');
+      const price = priceEl.text().replace(/[^\d.]/g, '');
 
       if (name && price) {
         materials.push({
@@ -38,4 +37,3 @@ const scrapeBunningsTimber = async () => {
   } catch (err) {
     console.error('Bunnings scrape failed:', err.message);
   }
-};
