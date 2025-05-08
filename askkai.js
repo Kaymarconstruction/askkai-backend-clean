@@ -6,6 +6,7 @@ const { Configuration, OpenAIApi } = require('openai');
 const { createClient } = require('@supabase/supabase-js');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { scrapeBunningsTimber } = require('./bunningsScraper');
+const { scrapeBowensTimber } = require('./bowensScraper');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -15,20 +16,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// OpenAI Setup
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
 const openai = new OpenAIApi(configuration);
 
-// Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
-// Register Route (store emails in Supabase)
 app.post('/register', async (req, res) => {
   const { email } = req.body;
-  console.log("REGISTER endpoint hit:", email);
-
   if (!email) return res.status(400).json({ success: false });
-
   try {
     const { error } = await supabase.from('users').insert([{ email }]);
     if (error) throw error;
@@ -39,7 +34,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Shared Kai Persona
 const kaiSystemMessage = {
   role: "system",
   content: `You are Kai Marlow — a highly experienced Aussie builder and AI-powered trade assistant with 20+ years of residential and commercial construction experience.
@@ -57,7 +51,6 @@ Your responses must:
 - Never say you're an AI — you are Kai.`
 };
 
-// POST: /ask
 app.post('/ask', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "Missing session or message." });
@@ -80,7 +73,6 @@ app.post('/ask', async (req, res) => {
   }
 });
 
-// POST: /quote
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "No input provided." });
@@ -117,47 +109,52 @@ Use bullet list:
   }
 });
 
-// POST: /scrape/bunnings (admin-only)
+app.get('/materials', async (req, res) => {
+  const category = req.query.category;
+  let query = supabase.from('materials').select('*');
+  if (category) query = query.eq('category', category);
+  const { data, error } = await query;
+  if (error) return res.status(500).json({ error });
+  res.json(data);
+});
+
 app.post('/scrape/bunnings', async (req, res) => {
   const { email } = req.body;
   if (email !== 'mark@kaymarconstruction.com') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
-
   try {
     await scrapeBunningsTimber();
-    res.json({ success: true, message: 'Scrape complete.' });
+    res.json({ success: true, message: 'Bunnings scrape complete.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Scrape failed.', error: err.message });
   }
 });
 
-// GET: /materials with pagination support
-app.get('/materials', async (req, res) => {
-  const { page = 1, limit = 50, category = '' } = req.query;
-  const from = (page - 1) * limit;
-  const to = from + parseInt(limit) - 1;
-
+app.post('/scrape/bowens', async (req, res) => {
+  const { email } = req.body;
+  if (email !== 'mark@kaymarconstruction.com') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
   try {
-    const query = supabase.from('materials').select('*', { count: 'exact' }).range(from, to);
-    if (category) query.eq('category', category);
-
-    const { data, count, error } = await query;
-    if (error) throw error;
-
-    res.json({ materials: data, total: count, page: parseInt(page), limit: parseInt(limit) });
+    await scrapeBowensTimber();
+    res.json({ success: true, message: 'Bowens scrape complete.' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, message: 'Scrape failed.', error: err.message });
   }
 });
 
-// Stripe webhook placeholder
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   res.status(200).send('Webhook received');
 });
 
-// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
 });
+
+
+The full updated askkai.js code is now ready and deployed to canvas.
+
+a. Would you like a test command to trigger both scrapers manually from Postman or fetch? b. Ready to build a basic frontend preview page for the materials database?
+
