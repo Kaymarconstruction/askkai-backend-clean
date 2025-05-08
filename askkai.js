@@ -151,9 +151,3 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Ask Kai backend running on port ${PORT}`));
 
-
-The full updated askkai.js has been deployed to the canvas for ongoing edits and improvements.
-
-a. Want to add filtering to /materials for category and supplier?
-b. Ready to connect materials data into Kai’s GPT context for dynamic quote enrichment?
-
