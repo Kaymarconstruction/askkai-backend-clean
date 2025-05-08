@@ -1,3 +1,4 @@
+// bunningsScraper.js
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { createClient } = require('@supabase/supabase-js');
@@ -20,9 +21,14 @@ const scrapeBunningsTimber = async () => {
       if (name && price) {
         materials.push({
           supplier: 'Bunnings',
-          name,
           category: 'timber',
-          price_per_unit: parseFloat(price),
+          name,
+          description: null,
+          unit: null,
+          unit_price: parseFloat(price),
+          url,
+          source: 'Bunnings',
+          scraped_at: new Date().toISOString(),
         });
       }
     });
@@ -38,3 +44,5 @@ const scrapeBunningsTimber = async () => {
     console.error('Bunnings scrape failed:', err.message);
   }
 };
+
+module.exports = { scrapeBunningsTimber };
