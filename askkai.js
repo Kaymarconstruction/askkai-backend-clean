@@ -7,13 +7,12 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 app.use(cors());
 app.use(express.json());
 
-// GET /materials
+// GET /materials with filters
 app.get('/materials', async (req, res) => {
   try {
     const { supplier, category, search } = req.query;
@@ -32,7 +31,7 @@ app.get('/materials', async (req, res) => {
   }
 });
 
-// Dummy scraping endpoints for dev testing
+// DUMMY: /scrape/bunnings
 app.get('/scrape/bunnings', async (req, res) => {
   try {
     const materials = [
@@ -56,6 +55,7 @@ app.get('/scrape/bunnings', async (req, res) => {
   }
 });
 
+// DUMMY: /scrape/bowens
 app.get('/scrape/bowens', async (req, res) => {
   try {
     const materials = [
