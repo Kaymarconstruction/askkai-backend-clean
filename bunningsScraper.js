@@ -20,14 +20,11 @@ const scrapeBunningsTimber = async () => {
       if (name && price) {
         materials.push({
           supplier: 'Bunnings',
-          category: 'timber',
           name,
-          description: null,
-          unit: null,
-          unit_price: parseFloat(price),
-          url,
-          source: 'Bunnings',
+          category: 'timber',
+          price_per_unit: parseFloat(price),
           scraped_at: new Date().toISOString(),
+          source: url
         });
       }
     });
@@ -37,11 +34,9 @@ const scrapeBunningsTimber = async () => {
       if (error) throw error;
       console.log(`Inserted ${materials.length} materials from Bunnings.`);
     } else {
-      console.log('No materials found.');
+      console.log('No materials found from Bunnings.');
     }
   } catch (err) {
     console.error('Bunnings scrape failed:', err.message);
   }
 };
-
-module.exports = { scrapeBunningsTimber };
