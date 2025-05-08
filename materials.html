@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Materials – Ask Kai</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -18,103 +18,89 @@
   </style>
 </head>
 <body class="text-gray-800">
-  <div class="w-full bg-black relative">
-    <div class="absolute left-2 top-1/2 transform -translate-y-1/2 z-50">
-      <button onclick="toggleMenu()" class="bg-white text-black p-2 rounded shadow">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
-      <div id="menuDropdown" class="hidden absolute left-0 mt-2 w-64 bg-white border border-gray-300 shadow-lg rounded-md z-50">
-        <a href="index.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Home</a>
-        <a href="materials.html" class="block px-4 py-2 text-sm text-green-600 font-bold">Materials</a>
-        <a href="quote.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Quote Generator (PRO)</a>
-        <a href="calculators.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Calculators</a>
-        <a href="settings.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Settings</a>
-        <a href="upgrade.html" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Upgrade</a>
-        <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log Out</button>
-      </div>
-    </div>
-    <img src="https://i.imgur.com/nDIhtRr.png" alt="Kaymar Banner" class="w-full max-h-24 object-contain mx-auto">
-  </div>
-
   <main class="max-w-5xl mx-auto p-4 w-full">
-    <div class="overlay p-4 rounded-xl">
-      <div class="flex flex-wrap items-center space-x-4 mb-4">
-        <select id="supplierFilter" class="border rounded p-2">
+    <div class="overlay p-6 rounded-xl">
+      <h1 class="text-2xl font-bold mb-4">Materials Database</h1>
+
+      <div class="flex flex-wrap gap-4 mb-6">
+        <select id="supplierFilter" class="border p-2 rounded w-48">
           <option value="">All Suppliers</option>
           <option value="Bunnings">Bunnings</option>
           <option value="Bowens">Bowens</option>
         </select>
-        <select id="categoryFilter" class="border rounded p-2">
+
+        <select id="categoryFilter" class="border p-2 rounded w-64">
           <option value="">All Categories</option>
-          <option value="timber">Timber</option>
-          <option value="screws">Screws</option>
-          <option value="cladding">Cladding</option>
+          <option value="Timber">Timber</option>
+          <option value="Insulation">Insulation</option>
+          <option value="Concrete & Cementing">Concrete & Cementing</option>
+          <option value="Deck">Deck</option>
+          <option value="Fencing & Gates">Fencing & Gates</option>
+          <option value="Paint">Paint</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="Kitchen">Kitchen</option>
+          <option value="Landscaping Supplies">Landscaping Supplies</option>
         </select>
-        <input type="text" id="searchInput" placeholder="Search material..." class="border rounded p-2">
-        <button onclick="loadMaterials()" class="bg-green-600 text-white px-4 py-2 rounded">Search</button>
+
+        <button id="searchBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Search</button>
       </div>
 
-      <div id="materialsList" class="bg-white rounded-xl shadow p-4 space-y-4 text-sm text-gray-800">
-        <p>Loading materials...</p>
-      </div>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-200 text-sm">
+            <th class="border px-2 py-1">Name</th>
+            <th class="border px-2 py-1">Supplier</th>
+            <th class="border px-2 py-1">Category</th>
+            <th class="border px-2 py-1">Price ($)</th>
+            <th class="border px-2 py-1">Scraped At</th>
+          </tr>
+        </thead>
+        <tbody id="materialsTable"></tbody>
+      </table>
     </div>
   </main>
 
-  <footer class="text-center text-gray-500 text-sm p-6">
-    &copy; 2025 Kaymar Construction | Powered by Ask Kai
-    <div class="flex justify-center space-x-6 mt-2">
-      <a href="https://www.instagram.com/askkai_official" class="text-blue-600 hover:underline">Instagram</a>
-      <a href="https://www.tiktok.com/@askkai_official" class="text-blue-600 hover:underline">TikTok</a>
-      <a href="https://www.facebook.com/askkai_official" class="text-blue-600 hover:underline">Facebook</a>
-      <a href="https://www.youtube.com/@askkai_official" class="text-blue-600 hover:underline">YouTube</a>
-      <a href="https://www.threads.net/@askkai_official" class="text-blue-600 hover:underline">Threads</a>
-    </div>
-    <p class="text-xs text-gray-400 mt-2">Built with coding support from Jack Cooper</p>
-  </footer>
-
   <script>
-    const toggleMenu = () => {
-      document.getElementById('menuDropdown').classList.toggle('hidden');
-    };
-
-    const logoutUser = () => {
-      sessionStorage.clear();
-      localStorage.clear();
-      window.location.href = 'logout.html';
-    };
-
-    async function loadMaterials() {
+    const fetchMaterials = async () => {
       const supplier = document.getElementById('supplierFilter').value;
       const category = document.getElementById('categoryFilter').value;
-      const query = document.getElementById('searchInput').value.trim();
+      let url = 'https://askkai-backend-clean.onrender.com/materials';
 
-      let url = 'https://askkai-backend-clean.onrender.com/materials?';
-      if (supplier) url += `supplier=${encodeURIComponent(supplier)}&`;
-      if (category) url += `category=${encodeURIComponent(category)}&`;
-      if (query) url += `q=${encodeURIComponent(query)}`;
+      const params = new URLSearchParams();
+      if (supplier) params.append('supplier', supplier);
+      if (category) params.append('category', category);
+      if ([...params].length) url += `?${params.toString()}`;
 
-      const res = await fetch(url);
-      const data = await res.json();
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const table = document.getElementById('materialsTable');
+        table.innerHTML = '';
 
-      const list = document.getElementById('materialsList');
-      list.innerHTML = '';
+        if (data.length === 0) {
+          table.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-4">No results found</td></tr>';
+          return;
+        }
 
-      if (!data || data.length === 0) {
-        list.innerHTML = '<p>No materials found.</p>';
-        return;
+        data.forEach(mat => {
+          const row = document.createElement('tr');
+          row.classList.add('border-b');
+          row.innerHTML = `
+            <td class="border px-2 py-1">${mat.name}</td>
+            <td class="border px-2 py-1">${mat.supplier}</td>
+            <td class="border px-2 py-1">${mat.category}</td>
+            <td class="border px-2 py-1">${mat.price_per_unit?.toFixed(2) || '-'}</td>
+            <td class="border px-2 py-1 text-sm text-gray-500">${new Date(mat.scraped_at).toLocaleString()}</td>
+          `;
+          table.appendChild(row);
+        });
+      } catch (err) {
+        console.error('Fetch failed:', err);
       }
+    };
 
-      data.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'border-b pb-2';
-        card.innerHTML = `<strong>${item.name}</strong> – $${item.price_per_unit} <em>(${item.category}) from ${item.supplier}</em>`;
-        list.appendChild(card);
-      });
-    }
-
-    loadMaterials();
+    document.getElementById('searchBtn').addEventListener('click', fetchMaterials);
+    window.addEventListener('load', fetchMaterials);
   </script>
 </body>
 </html>
