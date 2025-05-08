@@ -15,11 +15,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// OpenAI Setup
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
 const openai = new OpenAIApi(configuration);
 
+// Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
+// Register Route (store emails in Supabase)
 app.post('/register', async (req, res) => {
   const { email } = req.body;
   console.log("REGISTER endpoint hit:", email);
@@ -36,6 +39,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
+// Shared Kai Persona
 const kaiSystemMessage = {
   role: "system",
   content: `You are Kai Marlow — a highly experienced Aussie builder and AI-powered trade assistant with 20+ years of residential and commercial construction experience.
@@ -53,6 +57,7 @@ Your responses must:
 - Never say you're an AI — you are Kai.`
 };
 
+// POST: /ask
 app.post('/ask', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "Missing session or message." });
@@ -75,6 +80,7 @@ app.post('/ask', async (req, res) => {
   }
 });
 
+// POST: /quote
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ reply: "No input provided." });
@@ -111,6 +117,7 @@ Use bullet list:
   }
 });
 
+// POST: /scrape/bunnings (admin-only)
 app.post('/scrape/bunnings', async (req, res) => {
   const { email } = req.body;
   if (email !== 'mark@kaymarconstruction.com') {
@@ -125,26 +132,31 @@ app.post('/scrape/bunnings', async (req, res) => {
   }
 });
 
+// GET: /materials with pagination support
 app.get('/materials', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('materials')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
+  const { page = 1, limit = 50, category = '' } = req.query;
+  const from = (page - 1) * limit;
+  const to = from + parseInt(limit) - 1;
 
+  try {
+    const query = supabase.from('materials').select('*', { count: 'exact' }).range(from, to);
+    if (category) query.eq('category', category);
+
+    const { data, count, error } = await query;
     if (error) throw error;
-    res.json({ success: true, data });
+
+    res.json({ materials: data, total: count, page: parseInt(page), limit: parseInt(limit) });
   } catch (err) {
-    console.error("Fetch materials error:", err.message);
-    res.status(500).json({ success: false, message: 'Failed to fetch materials.' });
+    res.status(500).json({ error: err.message });
   }
 });
 
+// Stripe webhook placeholder
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   res.status(200).send('Webhook received');
 });
 
+// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
