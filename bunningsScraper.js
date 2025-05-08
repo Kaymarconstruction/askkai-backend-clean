@@ -37,3 +37,4 @@ const scrapeBunningsTimber = async () => {
   } catch (err) {
     console.error('Bunnings scrape failed:', err.message);
   }
+};
