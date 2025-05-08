@@ -17,15 +17,17 @@ const scrapeBowensTimber = async () => {
       const priceText = $(el).find('.price').first().text().trim();
       const priceMatch = priceText.match(/\$([\d,.]+)/);
       const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null;
+      const url = $(el).find('.product-item-link').attr('href');
 
       if (name && price) {
         materials.push({
           supplier: 'Bowens',
-          source: 'Bowens',
           name,
           category: 'timber',
-          price_per_unit: price,
+          unit_price: price,
+          url: url || '',
           scraped_at: new Date().toISOString(),
+          source: 'Bowens'
         });
       }
     });
@@ -35,11 +37,11 @@ const scrapeBowensTimber = async () => {
       if (error) throw error;
       console.log(`Inserted ${materials.length} materials from Bowens.`);
     } else {
-      console.log('No materials found.');
+      console.log('No materials found from Bowens.');
     }
   } catch (err) {
     console.error('Bowens scrape failed:', err.message);
   }
 };
 
-module.exports = { scrapeBowensTimber };
+scrapeBowensTimber();
