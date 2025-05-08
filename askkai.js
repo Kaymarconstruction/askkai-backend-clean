@@ -5,6 +5,9 @@ const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
+const { scrapeBowens } = require('./bowensScraper');
+const { scrapeBunningsAll } = require('./bunningsScraper');
+
 const app = express();
 const PORT = process.env.PORT || 10000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -31,51 +34,33 @@ app.get('/materials', async (req, res) => {
   }
 });
 
-// DUMMY: /scrape/bunnings
-app.get('/scrape/bunnings', async (req, res) => {
+// Real: POST /scrape/bunnings
+app.post('/scrape/bunnings', async (req, res) => {
+  const { email } = req.body;
+  if (email !== 'mark@kaymarconstruction.com') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
   try {
-    const materials = [
-      {
-        supplier: 'Bunnings',
-        category: 'Timber',
-        name: 'H3 Treated Pine 90x45mm',
-        description: 'Outdoor use timber',
-        unit: 'm',
-        unit_price: 6.75,
-        url: 'https://bunnings.com.au/example',
-        scraped_at: new Date().toISOString(),
-        source: 'Bunnings'
-      }
-    ];
-    const { error } = await supabase.from('materials').insert(materials);
-    if (error) throw error;
-    res.json({ message: 'Bunnings data inserted.' });
+    await scrapeBunningsAll();
+    res.json({ success: true, message: 'Bunnings scrape complete.' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// DUMMY: /scrape/bowens
-app.get('/scrape/bowens', async (req, res) => {
+// Real: POST /scrape/bowens
+app.post('/scrape/bowens', async (req, res) => {
+  const { email } = req.body;
+  if (email !== 'mark@kaymarconstruction.com') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
   try {
-    const materials = [
-      {
-        supplier: 'Bowens',
-        category: 'Decking',
-        name: 'Merbau 140x19mm',
-        description: 'Durable decking timber',
-        unit: 'lm',
-        unit_price: 9.9,
-        url: 'https://bowens.com.au/example',
-        scraped_at: new Date().toISOString(),
-        source: 'Bowens'
-      }
-    ];
-    const { error } = await supabase.from('materials').insert(materials);
-    if (error) throw error;
-    res.json({ message: 'Bowens data inserted.' });
+    await scrapeBowens();
+    res.json({ success: true, message: 'Bowens scrape complete.' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
