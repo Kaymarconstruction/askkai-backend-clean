@@ -30,24 +30,18 @@ const scrapeBowens = async () => {
 
       $('.product-item-info').each((i, el) => {
         const name = $(el).find('.product-item-link').text().trim();
-        const description = $(el).find('.short-description').text().trim() || 'No description';
         const priceText = $(el).find('.price').first().text().trim();
         const priceMatch = priceText.match(/\$([\d,.]+)/);
         const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null;
 
-        if (name && price !== null) {
+        if (name && price) {
           materials.push({
-            uuid: crypto.randomUUID(),
             supplier: 'Bowens',
-            category: url.split('/c/')[1].replace(/\/$/, ''),
             name,
-            description,
-            unit: 'unit',
-            unit_price: price,
+            category: url.split('/c/')[1].replace(/\/$/, ''),
             price_per_unit: price,
-            url,
             scraped_at: new Date().toISOString(),
-            source: 'Bowens'
+            source: url
           });
         }
       });
@@ -55,7 +49,7 @@ const scrapeBowens = async () => {
       if (materials.length > 0) {
         const { error } = await supabase.from('materials').insert(materials);
         if (error) throw error;
-        console.log(`Inserted ${materials.length} materials from Bowens: ${url}`);
+        console.log(`Inserted ${materials.length} from ${url}`);
       } else {
         console.log(`No materials found at ${url}`);
       }
