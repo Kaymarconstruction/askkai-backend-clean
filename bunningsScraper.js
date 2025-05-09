@@ -5,6 +5,13 @@ const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const categories = [
+  { category: 'timberconst axios = require('axios');
+const cheerio = require('cheerio');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+const categories = [
   { category: 'timber', url: 'https://www.bunnings.com.au/products/building-hardware/timber/' },
   { category: 'insulation', url: 'https://www.bunnings.com.au/products/building-hardware/insulation/' },
   { category: 'ladders', url: 'https://www.bunnings.com.au/products/building-hardware/ladders/' },
@@ -22,12 +29,13 @@ const scrapeBunningsCategory = async (category, url) => {
     const $ = cheerio.load(data);
 
     const materials = [];
+    
     $('.product-title').each((i, el) => {
       const name = $(el).text().trim();
       const priceEl = $(el).closest('.product-container').find('.price');
-      const price = priceEl.text().replace(/[^\d.]/g, '');
+      const price = priceEl.text().replace(/[^
+\d.]/g, '');
 
-      console.log('Scraped materials:', materials);
       if (name && price) {
         materials.push({
           supplier: 'Bunnings',
@@ -40,21 +48,27 @@ const scrapeBunningsCategory = async (category, url) => {
       }
     });
 
+    console.debug(`Scraped materials for category '${category}':`, materials);
+
     if (materials.length > 0) {
       const { error } = await supabase.from('materials').insert(materials);
       if (error) throw error;
       console.log(`Inserted ${materials.length} materials from Bunnings: ${category}`);
     } else {
-      console.log(`No materials found for ${category}`);
+      console.warn(`No materials found for category: ${category}`);
     }
   } catch (err) {
-    console.error(`Bunnings scrape failed for ${category}:`, err.message);
+    console.error(`Bunnings scrape failed for category '${category}':`, err.message);
   }
 };
 
 const scrapeBunningsAll = async () => {
   for (const { category, url } of categories) {
+    console.log(`Starting scrape for category: ${category}`);
     await scrapeBunningsCategory(category, url);
   }
+  console.log('Bunnings scrape completed.');
 };
+
 module.exports = { scrapeBunningsAll };
+
