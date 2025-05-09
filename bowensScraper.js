@@ -40,8 +40,8 @@ const scrapeBowens = async () => {
             name,
             category: url.split('/c/')[1].replace(/\/$/, ''),
             price_per_unit: price,
-            scraped_at: new Date().toISOString(),
-            source: url
+            source: url,
+            scraped_at: new Date().toISOString()
           });
         }
       });
@@ -49,7 +49,7 @@ const scrapeBowens = async () => {
       if (materials.length > 0) {
         const { error } = await supabase.from('materials').insert(materials);
         if (error) throw error;
-        console.log(`Inserted ${materials.length} from ${url}`);
+        console.log(`Inserted ${materials.length} materials from ${url}`);
       } else {
         console.log(`No materials found at ${url}`);
       }
