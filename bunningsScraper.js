@@ -56,6 +56,3 @@ const scrapeBunningsAll = async () => {
     await scrapeBunningsCategory(category, url);
   }
 };
-
-module.exports = { scrapeBunningsAll };
-
