@@ -26,14 +26,14 @@ const scrapeBowens = async () => {
 
   for (const url of categoryUrls) {
     try {
-      await page.goto(url, { waitUntil: 'networkidle2' });
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
       const materials = await page.evaluate(() => {
         const items = [];
         const productElements = document.querySelectorAll('.product-item-info');
 
         productElements.forEach(el => {
-          const name = el.querySelector('.product-item-link')?.innerText.trim();
-          const priceText = el.querySelector('.price')?.innerText.trim();
+          const name = el.querySelector('.product-item-link')?.textContent.trim();
+          const priceText = el.querySelector('.price')?.textContent.trim();
           const priceMatch = priceText ? priceText.match(/\$([\d,.]+)/) : null;
           const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null;
 
@@ -41,10 +41,10 @@ const scrapeBowens = async () => {
             items.push({
               supplier: 'Bowens',
               name,
-              category: window.location.pathname.split('/c/')[1].replace(/\/$/, ''),
+              category: url.split('/c/')[1].replace(/\/$/, ''),
               price_per_unit: price,
               scraped_at: new Date().toISOString(),
-              source: window.location.href
+              source: url
             });
           }
         });
@@ -71,9 +71,4 @@ const scrapeBowens = async () => {
   await browser.close();
 };
 
-module.exports = { scrapeBowens };
-
-  await browser.close();
-};
-
-module.exports = { scrapeBowens };
+scrapeBowens();
