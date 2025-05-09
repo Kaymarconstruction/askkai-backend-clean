@@ -4,16 +4,20 @@ const { createClient } = require('@supabase/supabase-js');
 const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
-const { scrapeBowens } = require('./bowensScraper');
+const { scrapeBowens } = require('./bowensScraper'); // Only Bowens for now
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
 
 app.use(cors());
 app.use(express.json());
+
+// Health Check Endpoint
+app.get('/status', (req, res) => {
+  res.json({ success: true, message: 'Ask Kai backend is running.' });
+});
 
 // GET /materials with filters
 app.get('/materials', async (req, res) => {
@@ -27,14 +31,16 @@ app.get('/materials', async (req, res) => {
 
     const { data, error } = await query;
     if (error) throw error;
+
+    console.log(`GET /materials | Supplier: ${supplier || 'Any'}, Category: ${category || 'Any'}, Search: ${search || 'None'}`);
     res.json(data);
   } catch (err) {
-    console.error(err);
+    console.error('Error in /materials:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Chat with Kai (Advanced Logic)
+// Chat with Kai
 app.post('/chat', async (req, res) => {
   const { messages } = req.body;
 
@@ -45,34 +51,8 @@ app.post('/chat', async (req, res) => {
   const systemPrompt = {
     role: 'system',
     content: `You are Kai, a senior estimator and builder with 20+ years of experience. 
-You calculate material takeoffs and provide expert building advice. 
-
-Always ask for:
-- Project location
-- Precise dimensions
-- Product type (decking, plasterboard, bricks, etc.)
-- Preferred product sizes or materials
-- Do they require just the decking boards or the subfloor as well?
-
-For decking jobs, clarify:
-- Is subfloor required?
-- Type of stumps (timber or concrete)?
-- Concrete hole depth for stumps per code?
-- Confirm spacing for joists and bearers per code?
-- Deck board direction and spacing?
-
-Use these rules:
-- Timber lengths should round up to the next multiple of 0.6m.
-- Bearers: One at start, one at finish, and intermediate based on span limits.
-- Joists: Same logic, based on span and spacing rules (400mm or 450mm).
-- Composite decking often requires 400mm joist spacing.
-- Include concrete bags required for post footings.
-- Pergola posts depend on roof type and load. Ask pergola height.
-- Roofing sheets should allow for at least +200mm length margin.
-- Use appropriate flashing, guttering, and downpipes with margins.
-
-End every response with: "All quantities are estimates. Confirm with your supplier or engineer." 
-Keep answers under 120 words. Provide the materials list directly in the chat flow.`
+Provide building advice and material estimates. Always clarify job details. 
+End every response with: "All quantities are estimates. Confirm with your supplier or engineer."`
   };
 
   const fullMessages = messages.some(m => m.role === 'system')
@@ -88,36 +68,27 @@ Keep answers under 120 words. Provide the materials list directly in the chat fl
     });
 
     const reply = aiResponse.data.choices[0].message.content.trim();
+    console.log('Chat response generated.');
     res.json({ reply });
   } catch (error) {
-    console.error('Kai Chat Error:', error.message);
+    console.error('Kai Chat Error:', error);
     res.status(500).json({ reply: 'Kai had an error, please try again shortly.' });
   }
 });
 
-// Scrape Endpoints
-app.post('/scrape/bunnings', async (req, res) => {
-  const { email } = req.body;
-  if (email !== 'mark@kaymarconstruction.com') {
-    return res.status(403).json({ success: false, message: 'Unauthorized' });
-  }
-  try {
-    await scrapeBunningsAll();
-    res.json({ success: true, message: 'Bunnings scrape complete.' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
+// Scrape Bowens Only (Bunnings Removed for Now)
 app.post('/scrape/bowens', async (req, res) => {
   const { email } = req.body;
   if (email !== 'mark@kaymarconstruction.com') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
+
   try {
     await scrapeBowens();
+    console.log('Bowens scrape complete.');
     res.json({ success: true, message: 'Bowens scrape complete.' });
   } catch (err) {
+    console.error('Error during Bowens scrape:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
