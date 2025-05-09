@@ -5,7 +5,7 @@
   "main": "askkai.js",
   "scripts": {
     "start": "node askkai.js",
-    "dev": "nodemon askkai.js"
+    "scrape:bowens": "node -e \"require('./bowensScraper').scrapeBowens()\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
@@ -16,9 +16,6 @@
     "openai": "^3.2.1",
     "stripe": "^12.8.0",
     "puppeteer": "^21.3.8"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.0"
   },
   "engines": {
     "node": ">=14"
