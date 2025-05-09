@@ -28,6 +28,7 @@ const scrapeBowens = async () => {
       const $ = cheerio.load(data);
       const materials = [];
 
+      console.log('Scraped materials:', materials);
       $('.product-item-info').each((i, el) => {
         const name = $(el).find('.product-item-link').text().trim();
         const priceText = $(el).find('.price').first().text().trim();
