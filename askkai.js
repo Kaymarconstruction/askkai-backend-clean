@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const cheerio = require('cheerio');
 const axios = require('axios');
+const cheerio = require('cheerio');
 const { createClient } = require('@supabase/supabase-js');
 const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
@@ -12,13 +12,12 @@ const { scrapeBunningsAll } = require('./bunningsScraper');
 const app = express();
 const PORT = process.env.PORT || 10000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
 
 app.use(cors());
 app.use(express.json());
 
-// GET /materials with filters
+// GET /materials - Fetch Materials with Filters
 app.get('/materials', async (req, res) => {
   try {
     const { supplier, category, search } = req.query;
@@ -32,12 +31,12 @@ app.get('/materials', async (req, res) => {
     if (error) throw error;
     res.json(data);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching materials:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Chat with Kai (Advanced Logic)
+// POST /chat - Chat with Kai (Estimator Logic)
 app.post('/chat', async (req, res) => {
   const { messages } = req.body;
 
@@ -47,35 +46,33 @@ app.post('/chat', async (req, res) => {
 
   const systemPrompt = {
     role: 'system',
-    content: `You are Kai, a senior estimator and builder with 20+ years of experience. 
-You calculate material takeoffs and provide expert building advice. 
-
-Always ask for:
+    content: `You are Kai, a senior estimator and builder with 20+ years of experience.
+Ask for:
 - Project location
 - Precise dimensions
 - Product type (decking, plasterboard, bricks, etc.)
 - Preferred product sizes or materials
-- Do they require just the decking boards or the subfloor as well?
+- Do they require just decking boards or the subfloor as well?
 
-For decking jobs, clarify:
+Decking Clarifications:
 - Is subfloor required?
-- Type of stumps (timber or concrete)?
+- Stump type (timber or concrete)?
 - Concrete hole depth for stumps per code?
-- Confirm spacing for joists and bearers per code?
+- Joist and bearer spacing per code?
 - Deck board direction and spacing?
 
-Use these rules:
-- Timber lengths should round up to the next multiple of 0.6m.
-- Bearers: One at start, one at finish, and intermediate based on span limits.
-- Joists: Same logic, based on span and spacing rules (400mm or 450mm).
-- Composite decking often requires 400mm joist spacing.
-- Include concrete bags required for post footings.
-- Pergola posts depend on roof type and load. Ask pergola height.
-- Roofing sheets should allow for at least +200mm length margin.
-- Use appropriate flashing, guttering, and downpipes with margins.
+Rules:
+- Round timber lengths to nearest 0.6m.
+- Bearers at start, middle (if required), and end.
+- Joists spaced at 400mm or 450mm centers.
+- Composite decking prefers 400mm spacing.
+- Include concrete bag requirements.
+- Pergola post size and footing based on roof type and load.
+- Roofing sheets require +200mm margin.
+- Use correct flashing, guttering, and downpipes.
 
 End every response with: "All quantities are estimates. Confirm with your supplier or engineer." 
-Keep answers under 120 words. Provide the materials list directly in the chat flow.`
+Limit replies to under 120 words. Provide materials list directly.`
   };
 
   const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages];
@@ -85,19 +82,18 @@ Keep answers under 120 words. Provide the materials list directly in the chat fl
       model: 'gpt-3.5-turbo',
       messages: fullMessages,
       max_tokens: 1000,
-      temperature: 0.6
+      temperature: 0.6,
     });
 
     const reply = aiResponse.data.choices[0].message.content.trim();
     res.json({ reply });
-
   } catch (error) {
     console.error('Kai Chat Error:', error.message);
     res.status(500).json({ reply: 'Kai had an error, please try again shortly.' });
   }
 });
 
-// Scrape Endpoints
+// POST /scrape/bunnings - Start Bunnings Scraper
 app.post('/scrape/bunnings', async (req, res) => {
   const { email } = req.body;
   if (email !== 'mark@kaymarconstruction.com') {
@@ -107,10 +103,12 @@ app.post('/scrape/bunnings', async (req, res) => {
     await scrapeBunningsAll();
     res.json({ success: true, message: 'Bunnings scrape complete.' });
   } catch (err) {
+    console.error('Bunnings Scrape Error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
+// POST /scrape/bowens - Start Bowens Scraper
 app.post('/scrape/bowens', async (req, res) => {
   const { email } = req.body;
   if (email !== 'mark@kaymarconstruction.com') {
@@ -120,6 +118,7 @@ app.post('/scrape/bowens', async (req, res) => {
     await scrapeBowens();
     res.json({ success: true, message: 'Bowens scrape complete.' });
   } catch (err) {
+    console.error('Bowens Scrape Error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -127,4 +126,3 @@ app.post('/scrape/bowens', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
 });
-
