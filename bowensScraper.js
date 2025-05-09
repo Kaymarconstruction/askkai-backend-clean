@@ -63,3 +63,4 @@ const scrapeBowens = async () => {
     }
   }
 };
+module.exports = { scrapeBowens };
