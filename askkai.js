@@ -122,6 +122,7 @@ app.post('/scrape/bowens', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+console.log('OPENAI_API_KEY Loaded:', process.env.OPENAI_API_KEY ? 'Yes' : 'No');
 
 app.listen(PORT, () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
