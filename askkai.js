@@ -4,7 +4,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
-const { scrapeBowens } = require('./bowensScraperPuppeteer'); // Updated import
+const { scrapeBowens } = require('./bowensScraper');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
