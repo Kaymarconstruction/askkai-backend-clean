@@ -28,7 +28,6 @@ const scrapeBowens = async () => {
       const $ = cheerio.load(data);
       const materials = [];
 
-      console.log('Scraped materials:', materials);
       $('.product-item-info').each((i, el) => {
         const name = $(el).find('.product-item-link').text().trim();
         const priceText = $(el).find('.price').first().text().trim();
@@ -41,22 +40,26 @@ const scrapeBowens = async () => {
             name,
             category: url.split('/c/')[1].replace(/\/$/, ''),
             price_per_unit: price,
-            source: url,
-            scraped_at: new Date().toISOString()
+            scraped_at: new Date().toISOString(),
+            source: url
           });
         }
       });
 
+      console.debug(`DEBUG: Fetched materials from ${url}:`, materials);
+
       if (materials.length > 0) {
         const { error } = await supabase.from('materials').insert(materials);
-        if (error) throw error;
-        console.log(`Inserted ${materials.length} materials from ${url}`);
+        if (error) {
+          console.error(`Supabase Insert Error for ${url}:`, error);
+          throw error;
+        }
+        console.log(`Inserted ${materials.length} materials from Bowens: ${url}`);
       } else {
-        console.log(`No materials found at ${url}`);
+        console.warn(`No materials found at ${url}`);
       }
     } catch (err) {
       console.error(`Error scraping ${url}:`, err.message);
     }
   }
 };
-module.exports = { scrapeBowens };
