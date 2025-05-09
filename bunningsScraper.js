@@ -28,26 +28,28 @@ const scrapeBunningsCategory = async (category, url) => {
       const price = priceEl.text().replace(/[^\d.]/g, '');
 
       if (name && price) {
-        const material = {
+        materials.push({
           supplier: 'Bunnings',
           name,
           category,
           price_per_unit: parseFloat(price),
           source: url,
           scraped_at: new Date().toISOString()
-        };
-        materials.push(material);
+        });
       }
     });
 
-    console.debug(`Scraped from category [${category}]:`, materials);
+    console.debug(`DEBUG: Fetched materials from ${url}:`, materials);
 
     if (materials.length > 0) {
       const { error } = await supabase.from('materials').insert(materials);
-      if (error) throw error;
+      if (error) {
+        console.error(`Supabase Insert Error for ${url}:`, error);
+        throw error;
+      }
       console.log(`Inserted ${materials.length} materials from Bunnings: ${category}`);
     } else {
-      console.log(`No materials found for ${category}`);
+      console.warn(`No materials found for ${category}`);
     }
   } catch (err) {
     console.error(`Bunnings scrape failed for ${category}:`, err.message);
@@ -60,4 +62,5 @@ const scrapeBunningsAll = async () => {
   }
 };
 
+// EXPORT FUNCTION!
 module.exports = { scrapeBunningsAll };
