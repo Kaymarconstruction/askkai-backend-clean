@@ -17,7 +17,7 @@ const categoryUrls = [
   'https://www.bowens.com.au/c/paints-stains/',
   'https://www.bowens.com.au/c/home-garden-products/',
   'https://www.bowens.com.au/c/roofing/',
-  'https://www.bowens.com.au/c/plumbing-bathroom/',
+  'https://www.bowens.com.au/c/plumbing-bathroom/'
 ];
 
 const scrapeBowens = async () => {
@@ -27,7 +27,6 @@ const scrapeBowens = async () => {
   for (const url of categoryUrls) {
     try {
       await page.goto(url, { waitUntil: 'networkidle2' });
-
       const materials = await page.evaluate(() => {
         const items = [];
         document.querySelectorAll('.product-item-info').forEach(el => {
@@ -37,7 +36,14 @@ const scrapeBowens = async () => {
           const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null;
 
           if (name && price) {
-            items.push({ name, price });
+            items.push({
+              supplier: 'Bowens',
+              name,
+              category: window.location.pathname.split('/c/')[1].replace(/\/$/, ''),
+              price_per_unit: price,
+              scraped_at: new Date().toISOString(),
+              source: window.location.href
+            });
           }
         });
         return items;
@@ -46,16 +52,7 @@ const scrapeBowens = async () => {
       console.debug(`DEBUG: Fetched materials from ${url}:`, materials);
 
       if (materials.length > 0) {
-        const enrichedMaterials = materials.map(item => ({
-          supplier: 'Bowens',
-          name: item.name,
-          category: url.split('/c/')[1].replace(/\/$/, ''),
-          price_per_unit: item.price,
-          scraped_at: new Date().toISOString(),
-          source: url
-        }));
-
-        const { error } = await supabase.from('materials').insert(enrichedMaterials);
+        const { error } = await supabase.from('materials').insert(materials);
         if (error) {
           console.error(`Supabase Insert Error for ${url}:`, error);
           throw error;
@@ -64,6 +61,7 @@ const scrapeBowens = async () => {
       } else {
         console.warn(`No materials found at ${url}`);
       }
+
     } catch (err) {
       console.error(`Error scraping ${url}:`, err.message);
     }
@@ -73,3 +71,12 @@ const scrapeBowens = async () => {
 };
 
 module.exports = { scrapeBowens };
+
+Important Notes:
+
+Run npm install puppeteer before deploying.
+
+This version will handle JavaScript-rendered content reliably.
+
+We’re using window.location directly inside Puppeteer’s evaluate() for accurate category/source info.
+
