@@ -28,6 +28,7 @@ const scrapeBowens = async () => {
   for (const url of categoryUrls) {
     try {
       await page.goto(url, { waitUntil: 'networkidle2' });
+
       const materials = await page.evaluate(() => {
         const items = [];
         document.querySelectorAll('.product-item-info').forEach(el => {
@@ -41,7 +42,7 @@ const scrapeBowens = async () => {
         return items;
       });
 
-      console.debug(`DEBUG: ${url}`, materials);
+      console.debug(`DEBUG: Fetched materials from ${url}:`, materials);
 
       if (materials.length) {
         const dbMaterials = materials.map(item => ({
