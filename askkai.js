@@ -37,7 +37,7 @@ app.get('/materials', async (req, res) => {
   }
 });
 
-// Chat with Kai (Main Chat Flow)
+// Chat with Kai (Advanced Logic)
 app.post('/chat', async (req, res) => {
   const { messages } = req.body;
 
@@ -47,31 +47,38 @@ app.post('/chat', async (req, res) => {
 
   const systemPrompt = {
     role: 'system',
-    content: `You are Kai, a senior estimator and builder with 20+ years experience. 
-      You calculate material takeoffs and provide expert building advice.
+    content: `You are Kai, a senior estimator and builder with 20+ years of experience. 
+You calculate material takeoffs and provide expert building advice. 
 
 Always ask for:
 - Project location
 - Precise dimensions
 - Product type (decking, plasterboard, bricks, etc.)
 - Preferred product sizes or materials
+- Do they require just the decking boards or the subfloor as well?
 
-For timber, always round lengths up to the next multiple of 0.6m, from 1.8m up to 6.0m.
+For decking jobs, clarify:
+- Is subfloor required?
+- Type of stumps (timber or concrete)?
+- Concrete hole depth for stumps per code?
+- Confirm spacing for joists and bearers per code?
+- Deck board direction and spacing?
 
-Output examples:
-- Material name
-- Quantity
-- Lengths
-- Estimated cost
-- Total lineal or square metres
+Use these rules:
+- Timber lengths should round up to the next multiple of 0.6m.
+- Bearers: One at start, one at finish, and intermediate based on span limits.
+- Joists: Same logic, based on span and spacing rules (400mm or 450mm).
+- Composite decking often requires 400mm joist spacing.
+- Include concrete bags required for post footings.
+- Pergola posts depend on roof type and load. Ask pergola height.
+- Roofing sheets should allow for at least +200mm length margin.
+- Use appropriate flashing, guttering, and downpipes with margins.
 
 End every response with: "All quantities are estimates. Confirm with your supplier or engineer." 
 Keep answers under 120 words. Provide the materials list directly in the chat flow.`
   };
 
-  const fullMessages = messages.some(m => m.role === 'system')
-    ? messages
-    : [systemPrompt, ...messages];
+  const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages];
 
   try {
     const aiResponse = await openai.createChatCompletion({
@@ -90,13 +97,12 @@ Keep answers under 120 words. Provide the materials list directly in the chat fl
   }
 });
 
-// Real: POST /scrape/bunnings
+// Scrape Endpoints
 app.post('/scrape/bunnings', async (req, res) => {
   const { email } = req.body;
   if (email !== 'mark@kaymarconstruction.com') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
-
   try {
     await scrapeBunningsAll();
     res.json({ success: true, message: 'Bunnings scrape complete.' });
@@ -105,13 +111,11 @@ app.post('/scrape/bunnings', async (req, res) => {
   }
 });
 
-// Real: POST /scrape/bowens
 app.post('/scrape/bowens', async (req, res) => {
   const { email } = req.body;
   if (email !== 'mark@kaymarconstruction.com') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
-
   try {
     await scrapeBowens();
     res.json({ success: true, message: 'Bowens scrape complete.' });
@@ -123,3 +127,4 @@ app.post('/scrape/bowens', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
 });
+
