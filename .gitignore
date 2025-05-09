@@ -1,3 +1,4 @@
+# Node.js Dependencies
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -12,45 +13,40 @@ pnpm-debug.log*
 logs/
 *.log
 
-# Dependency directories
-jspm_packages/
-
-# Build output
+# Build Outputs
 dist/
 build/
 tmp/
 temp/
+out/
+.cache/
+public/build/
 
-# OS generated files
+# Coverage Reports
+coverage/
+.nyc_output/
+
+# OS Generated Files
 .DS_Store
 Thumbs.db
 
-# IDEs and editors
+# IDE and Editor Configs
 .vscode/
 .idea/
 *.sublime-workspace
 *.sublime-project
 
-# Coverage reports
-coverage/
-.nyc_output/
-
-# Misc
+# Miscellaneous
 *.local
 *.swp
 *.bak
 *.old
-
-# Frontend Specific
-.cache/
-.next/
-out/
-public/build/
 *.zip
 
-# Optional: Ignore database dumps
+# Database Dumps (Optional)
 *.sql
 *.sqlite
 
-# Optional: Ignore API keys accidentally created
+# API Keys / Secrets
 openai_api_key.txt
+supabase_api_key.txt
