@@ -27,6 +27,7 @@ const scrapeBunningsCategory = async (category, url) => {
       const priceEl = $(el).closest('.product-container').find('.price');
       const price = priceEl.text().replace(/[^\d.]/g, '');
 
+      console.log('Scraped materials:', materials);
       if (name && price) {
         materials.push({
           supplier: 'Bunnings',
