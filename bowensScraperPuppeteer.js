@@ -1,6 +1,5 @@
 const puppeteer = require('puppeteer');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -22,21 +21,31 @@ const categoryUrls = [
 ];
 
 const scrapeBowens = async () => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   for (const url of categoryUrls) {
     try {
       await page.goto(url, { waitUntil: 'networkidle2' });
-
       const materials = await page.evaluate(() => {
         const items = [];
-        document.querySelectorAll('.product-item-info').forEach(el => {
+        const productElements = document.querySelectorAll('.product-item-info');
+
+        productElements.forEach(el => {
           const name = el.querySelector('.product-item-link')?.innerText.trim();
           const priceText = el.querySelector('.price')?.innerText.trim();
-          const price = priceText ? parseFloat(priceText.replace(/[^0-9.]/g, '')) : null;
+          const priceMatch = priceText ? priceText.match(/\$([\d,.]+)/) : null;
+          const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null;
+
           if (name && price) {
-            items.push({ name, price });
+            items.push({
+              supplier: 'Bowens',
+              name,
+              category: window.location.pathname.split('/c/')[1].replace(/\/$/, ''),
+              price_per_unit: price,
+              scraped_at: new Date().toISOString(),
+              source: window.location.href
+            });
           }
         });
         return items;
@@ -44,22 +53,25 @@ const scrapeBowens = async () => {
 
       console.debug(`DEBUG: Fetched materials from ${url}:`, materials);
 
-      if (materials.length) {
-        const dbMaterials = materials.map(item => ({
-          supplier: 'Bowens',
-          name: item.name,
-          category: url.split('/c/')[1].replace(/\/$/, ''),
-          price_per_unit: item.price,
-          source: url,
-          scraped_at: new Date().toISOString()
-        }));
-        const { error } = await supabase.from('materials').insert(dbMaterials);
-        if (error) console.error(`Supabase Insert Error:`, error);
+      if (materials.length > 0) {
+        const { error } = await supabase.from('materials').insert(materials);
+        if (error) {
+          console.error(`Supabase Insert Error for ${url}:`, error);
+          throw error;
+        }
+        console.log(`Inserted ${materials.length} materials from Bowens: ${url}`);
+      } else {
+        console.warn(`No materials found at ${url}`);
       }
     } catch (err) {
       console.error(`Error scraping ${url}:`, err.message);
     }
   }
+
+  await browser.close();
+};
+
+module.exports = { scrapeBowens };
 
   await browser.close();
 };
