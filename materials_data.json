@@ -1,10 +1,12 @@
-{ "materials": "name": "Kapoor Hardwood Decking 90x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 7.90,
-"unit": "LM"
-},
 {
+  "materials": [
+      "name": "Kapoor Hardwood Decking 90x19",
+      "supplier": "Bowens",
+      "category": "Decking",
+      "price_per_unit": 7.90,
+      "unit": "LM"
+      },
+      {
 "name": "Kapoor Hardwood Decking 140x19",
 "supplier": "Bowens",
 "category": "Decking",
