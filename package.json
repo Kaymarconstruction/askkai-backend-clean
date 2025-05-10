@@ -5,8 +5,7 @@
   "main": "askkai.js",
   "scripts": {
     "start": "node askkai.js",
-    "scrape:bowens": "node -e \"require('./bowensScraper').scrapeBowens()\"",
-    "postinstall": "puppeteer install"
+    "scrape:bowens": "node -e \"require('./bowensScraper').scrapeBowens()\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
