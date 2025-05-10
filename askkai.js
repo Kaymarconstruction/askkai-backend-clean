@@ -12,6 +12,11 @@ const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_
 app.use(cors());
 app.use(express.json());
 
+// Health Check Route
+app.get('/', (req, res) => {
+  res.json({ status: 'Ask Kai Backend is running!' });
+});
+
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
   if (!messages || !Array.isArray(messages)) {
@@ -35,7 +40,6 @@ app.post('/quote', async (req, res) => {
 
     const materialList = aiResponse.data.choices[0].message.content.trim();
 
-    // Extract material names (basic extraction based on lines starting with '-')
     const materials = materialList
       .split('\n')
       .filter(line => line.startsWith('-'))
@@ -51,21 +55,20 @@ app.post('/quote', async (req, res) => {
         .limit(1)
         .single();
 
-      if (data) {
-        prices[material] = `${data.price_per_unit} per ${data.unit}`;
+      if (data && data.price_per_unit) {
+        prices[material] = `$${parseFloat(data.price_per_unit).toFixed(2)} per ${data.unit}`;
       } else {
         prices[material] = 'Price Not Found';
       }
     }
 
-    // Inject prices into the response
     const enrichedQuote = materialList.replace(/^-\s*(.*?):/gm, (match, p1) => {
       return `- ${p1}: (${prices[p1] || 'Price Not Found'})`;
     });
 
     res.json({ reply: enrichedQuote });
   } catch (error) {
-    console.error('Quote Generation Error:', error);
+    console.error('Quote Generation Error:', error.message);
     res.status(500).json({ reply: 'Kai had an error, please try again shortly.' });
   }
 });
