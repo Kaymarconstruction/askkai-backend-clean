@@ -71,12 +71,3 @@ const scrapeBowens = async () => {
 };
 
 module.exports = { scrapeBowens };
-
-Important Notes:
-
-Run npm install puppeteer before deploying.
-
-This version will handle JavaScript-rendered content reliably.
-
-We’re using window.location directly inside Puppeteer’s evaluate() for accurate category/source info.
-
