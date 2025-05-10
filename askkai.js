@@ -9,11 +9,15 @@ const { scrapeBowens } = require('./bowensScraper');
 const app = express();
 const PORT = process.env.PORT || 10000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
 
 app.use(cors());
 app.use(express.json());
+
+// Root Health Check
+app.get('/', (req, res) => {
+  res.json({ message: 'Ask Kai Backend is live!' });
+});
 
 // GET /materials with filters
 app.get('/materials', async (req, res) => {
@@ -29,7 +33,7 @@ app.get('/materials', async (req, res) => {
     if (error) throw error;
     res.json(data);
   } catch (err) {
-    console.error(err);
+    console.error('Materials Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -47,8 +51,8 @@ app.post('/chat', async (req, res) => {
     content: `You are Kai, a senior estimator and builder with 20+ years of experience. You calculate material takeoffs and provide expert building advice.`
   };
 
-  const fullMessages = messages.some(m => m.role === 'system')
-    ? messages
+  const fullMessages = messages.some(m => m.role === 'system') 
+    ? messages 
     : [systemPrompt, ...messages];
 
   try {
@@ -74,13 +78,20 @@ app.post('/scrape/bowens', async (req, res) => {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
 
+  console.log('Starting Bowens Scrape...');
   try {
     await scrapeBowens();
+    console.log('Bowens Scrape Completed.');
     res.json({ success: true, message: 'Bowens scrape complete.' });
   } catch (err) {
     console.error('Scrape Error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
+});
+
+// 404 Fallback Route
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found.' });
 });
 
 app.listen(PORT, () => {
