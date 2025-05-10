@@ -4,20 +4,16 @@ const { createClient } = require('@supabase/supabase-js');
 const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
-const { scrapeBowens } = require('./bowensScraper'); // Only Bowens for now
+const { scrapeBowens } = require('./bowensScraper');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
 const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
 
 app.use(cors());
 app.use(express.json());
-
-// Health Check Endpoint
-app.get('/status', (req, res) => {
-  res.json({ success: true, message: 'Ask Kai backend is running.' });
-});
 
 // GET /materials with filters
 app.get('/materials', async (req, res) => {
@@ -31,11 +27,9 @@ app.get('/materials', async (req, res) => {
 
     const { data, error } = await query;
     if (error) throw error;
-
-    console.log(`GET /materials | Supplier: ${supplier || 'Any'}, Category: ${category || 'Any'}, Search: ${search || 'None'}`);
     res.json(data);
   } catch (err) {
-    console.error('Error in /materials:', err);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -50,9 +44,7 @@ app.post('/chat', async (req, res) => {
 
   const systemPrompt = {
     role: 'system',
-    content: `You are Kai, a senior estimator and builder with 20+ years of experience. 
-Provide building advice and material estimates. Always clarify job details. 
-End every response with: "All quantities are estimates. Confirm with your supplier or engineer."`
+    content: `You are Kai, a senior estimator and builder with 20+ years of experience. You calculate material takeoffs and provide expert building advice.`
   };
 
   const fullMessages = messages.some(m => m.role === 'system')
@@ -68,15 +60,14 @@ End every response with: "All quantities are estimates. Confirm with your suppli
     });
 
     const reply = aiResponse.data.choices[0].message.content.trim();
-    console.log('Chat response generated.');
     res.json({ reply });
   } catch (error) {
-    console.error('Kai Chat Error:', error);
+    console.error('Kai Chat Error:', error.message);
     res.status(500).json({ reply: 'Kai had an error, please try again shortly.' });
   }
 });
 
-// Scrape Bowens Only (Bunnings Removed for Now)
+// Scrape Bowens Materials
 app.post('/scrape/bowens', async (req, res) => {
   const { email } = req.body;
   if (email !== 'mark@kaymarconstruction.com') {
@@ -85,10 +76,9 @@ app.post('/scrape/bowens', async (req, res) => {
 
   try {
     await scrapeBowens();
-    console.log('Bowens scrape complete.');
     res.json({ success: true, message: 'Bowens scrape complete.' });
   } catch (err) {
-    console.error('Error during Bowens scrape:', err);
+    console.error('Scrape Error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
