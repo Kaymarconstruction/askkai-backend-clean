@@ -73,14 +73,21 @@
       const categories = new Set();
 
       materials.forEach(material => {
+        const price = material.price_per_unit !== undefined && material.price_per_unit !== null 
+          ? `$${parseFloat(material.price_per_unit).toFixed(2)}`
+          : 'Price N/A';
+        
+        const unit = material.unit ? material.unit : '';
+
         const row = `<tr>
           <td class="p-2">${material.name}</td>
           <td class="p-2">${material.supplier}</td>
           <td class="p-2">${material.category}</td>
-          <td class="p-2">$${material.price_per_unit.toFixed(2)}</td>
+          <td class="p-2">${price} ${unit ? '/ ' + unit : ''}</td>
           <td class="p-2"><a href="${material.source}" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
-          <td class="p-2">${new Date(material.scraped_at).toLocaleDateString()}</td>
+          <td class="p-2">${material.scraped_at ? new Date(material.scraped_at).toLocaleDateString() : ''}</td>
         </tr>`;
+        
         table.insertAdjacentHTML('beforeend', row);
         if (material.category) categories.add(material.category);
       });
