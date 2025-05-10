@@ -9,11 +9,12 @@
 <body class="bg-gray-100 text-gray-800">
 
 <header class="bg-white shadow p-4 flex items-center justify-between">
-  <h1 class="text-xl font-bold text-green-600">Materials Database</h1>
+  <h1 class="text-xl font-bold text-green-600">Materials Catalogue</h1>
   <a href="index.html" class="text-sm text-blue-600 hover:underline">Back to Chat</a>
 </header>
 
 <main class="max-w-5xl mx-auto py-8 px-4 space-y-6">
+  <!-- Filters -->
   <div class="bg-white p-6 rounded-xl shadow space-y-4">
     <div class="flex flex-wrap gap-4">
       <input id="searchInput" type="text" placeholder="Search materials..." class="flex-1 border p-2 rounded" />
@@ -24,33 +25,21 @@
       </select>
       <select id="categorySelect" class="border p-2 rounded">
         <option value="">All Categories</option>
-        <option value="Decking">Decking</option>
-        <option value="Framing Timber">Framing Timber</option>
-        <option value="Timber Beams">Timber Beams</option>
-        <option value="Timber Battens">Timber Battens</option>
-        <option value="Timber Mouldings">Timber Mouldings</option>
-        <option value="Timber Sleepers">Timber Sleepers</option>
-        <option value="Timber Posts">Timber Posts</option>
-        <option value="Timber Fencing">Timber Fencing</option>
-        <option value="Merbau Timber">Merbau Timber</option>
-        <option value="Oregon Timber">Oregon Timber</option>
-        <option value="Cypress Pine">Cypress Pine</option>
-        <option value="Western Red Cedar">Western Red Cedar</option>
-        <option value="Handrails & Balustrading">Handrails & Balustrading</option>
-        <option value="Architraves & Skirting">Architraves & Skirting</option>
-        <option value="Concrete">Concrete</option>
       </select>
       <button onclick="loadMaterials()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Search</button>
     </div>
   </div>
 
+  <!-- Results Table -->
   <div class="bg-white p-6 rounded-xl shadow overflow-x-auto">
     <table class="min-w-full table-auto text-left text-sm">
       <thead class="bg-gray-200">
         <tr>
           <th class="p-2">Name</th>
+          <th class="p-2">Size</th>
           <th class="p-2">Supplier</th>
           <th class="p-2">Category</th>
+          <th class="p-2">Unit</th>
           <th class="p-2">Price</th>
           <th class="p-2">Source</th>
           <th class="p-2">Scraped At</th>
@@ -82,16 +71,34 @@
     const table = document.getElementById('materialsTable');
     table.innerHTML = '';
 
+    const categories = new Set();
+
     materials.forEach(material => {
       const row = `<tr>
         <td class="p-2">${material.name}</td>
+        <td class="p-2">${material.description || '-'}</td>
         <td class="p-2">${material.supplier}</td>
         <td class="p-2">${material.category}</td>
-        <td class="p-2">$${material.price_per_unit ? material.price_per_unit.toFixed(2) : 'N/A'} / ${material.unit || ''}</td>
+        <td class="p-2">${material.unit || '-'}</td>
+        <td class="p-2">$${material.price_per_unit || 'N/A'}</td>
         <td class="p-2"><a href="${material.source}" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
-        <td class="p-2">${material.scraped_at ? new Date(material.scraped_at).toLocaleDateString() : 'N/A'}</td>
+        <td class="p-2">${new Date(material.scraped_at).toLocaleDateString()}</td>
       </tr>`;
       table.insertAdjacentHTML('beforeend', row);
+      if (material.category) categories.add(material.category);
+    });
+
+    updateCategoryOptions(categories);
+  }
+
+  function updateCategoryOptions(categories) {
+    const select = document.getElementById('categorySelect');
+    select.innerHTML = `<option value="">All Categories</option>`;
+    [...categories].sort().forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+      select.appendChild(option);
     });
   }
 
