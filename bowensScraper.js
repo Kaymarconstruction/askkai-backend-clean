@@ -74,4 +74,4 @@ const scrapeBowens = async () => {
 
   await browser.close();
 };
-
+module.exports = { scrapeBowens };
