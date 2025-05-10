@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -23,7 +23,6 @@ const categoryUrls = [
 const scrapeBowens = async () => {
   const browser = await puppeteer.launch({
     headless: true,
-    executablePath: '/usr/bin/chromium-browser', // Path may vary; check with `which chromium-browser` if needed
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
@@ -67,6 +66,7 @@ const scrapeBowens = async () => {
       } else {
         console.warn(`No materials found at ${url}`);
       }
+
     } catch (err) {
       console.error(`Error scraping ${url}:`, err.message);
     }
@@ -74,4 +74,5 @@ const scrapeBowens = async () => {
 
   await browser.close();
 };
+
 module.exports = { scrapeBowens };
