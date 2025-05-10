@@ -12,10 +12,20 @@ const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_
 app.use(cors());
 app.use(express.json());
 
-// Health Check Route
-app.get('/', (req, res) => {
-  res.json({ status: 'Ask Kai Backend is running!' });
-});
+// Levenshtein Distance for Fuzzy Matching
+function levenshtein(a, b) {
+  const matrix = Array.from({ length: b.length + 1 }, () => []);
+  for (let i = 0; i <= b.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      matrix[i][j] = b[i - 1] === a[j - 1]
+        ? matrix[i - 1][j - 1]
+        : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+    }
+  }
+  return matrix[b.length][a.length];
+}
 
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
@@ -43,32 +53,40 @@ app.post('/quote', async (req, res) => {
     const materials = materialList
       .split('\n')
       .filter(line => line.startsWith('-'))
-      .map(line => line.replace('-', '').split(':')[0].trim());
+      .map(line => line.replace('-', '').split(':')[0].trim().toLowerCase());
+
+    const { data: supabaseMaterials } = await supabase.from('materials').select('name, price_per_unit, unit');
 
     const prices = {};
 
-    for (const material of materials) {
-      const { data, error } = await supabase
-        .from('materials')
-        .select('name, price_per_unit, unit')
-        .ilike('name', `%${material}%`)
-        .limit(1)
-        .single();
+    materials.forEach(material => {
+      let bestMatch = null;
+      let bestDistance = Infinity;
 
-      if (data && data.price_per_unit) {
-        prices[material] = `$${parseFloat(data.price_per_unit).toFixed(2)} per ${data.unit}`;
+      supabaseMaterials.forEach(item => {
+        const distance = levenshtein(material, item.name.toLowerCase());
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestMatch = item;
+        }
+      });
+
+      if (bestDistance <= 5 && bestMatch) { // Adjust threshold as needed
+        prices[material] = `${bestMatch.price_per_unit} per ${bestMatch.unit}`;
       } else {
+        console.log(`No match found for: ${material}`);
         prices[material] = 'Price Not Found';
       }
-    }
+    });
 
     const enrichedQuote = materialList.replace(/^-\s*(.*?):/gm, (match, p1) => {
-      return `- ${p1}: (${prices[p1] || 'Price Not Found'})`;
+      const materialKey = p1.trim().toLowerCase();
+      return `- ${p1}: (${prices[materialKey] || 'Price Not Found'})`;
     });
 
     res.json({ reply: enrichedQuote });
   } catch (error) {
-    console.error('Quote Generation Error:', error.message);
+    console.error('Quote Generation Error:', error);
     res.status(500).json({ reply: 'Kai had an error, please try again shortly.' });
   }
 });
