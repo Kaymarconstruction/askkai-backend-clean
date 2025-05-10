@@ -1,7 +1,9 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
 
 const categoryUrls = [
   'https://www.bowens.com.au/c/building-essentials/',
@@ -23,6 +25,7 @@ const categoryUrls = [
 const scrapeBowens = async () => {
   const browser = await puppeteer.launch({
     headless: true,
+    executablePath: executablePath,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
@@ -66,7 +69,6 @@ const scrapeBowens = async () => {
       } else {
         console.warn(`No materials found at ${url}`);
       }
-
     } catch (err) {
       console.error(`Error scraping ${url}:`, err.message);
     }
@@ -74,5 +76,3 @@ const scrapeBowens = async () => {
 
   await browser.close();
 };
-
-module.exports = { scrapeBowens };
