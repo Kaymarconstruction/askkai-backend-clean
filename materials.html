@@ -8,107 +8,99 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-  <!-- Header -->
-  <header class="bg-white shadow p-4 flex items-center justify-between">
-    <h1 class="text-xl font-bold text-green-600">Materials Database</h1>
-    <a href="index.html" class="text-sm text-blue-600 hover:underline">Back to Chat</a>
-  </header>
+<header class="bg-white shadow p-4 flex items-center justify-between">
+  <h1 class="text-xl font-bold text-green-600">Materials Database</h1>
+  <a href="index.html" class="text-sm text-blue-600 hover:underline">Back to Chat</a>
+</header>
 
-  <main class="max-w-5xl mx-auto py-8 px-4 space-y-6">
-    <!-- Filters -->
-    <div class="bg-white p-6 rounded-xl shadow space-y-4">
-      <div class="flex flex-wrap gap-4">
-        <input id="searchInput" type="text" placeholder="Search materials..." class="flex-1 border p-2 rounded" />
-        <select id="supplierSelect" class="border p-2 rounded">
-          <option value="">All Suppliers</option>
-          <option value="Bunnings">Bunnings</option>
-          <option value="Bowens">Bowens</option>
-        </select>
-        <select id="categorySelect" class="border p-2 rounded">
-          <option value="">All Categories</option>
-        </select>
-        <button onclick="loadMaterials()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Search</button>
-      </div>
+<main class="max-w-5xl mx-auto py-8 px-4 space-y-6">
+  <div class="bg-white p-6 rounded-xl shadow space-y-4">
+    <div class="flex flex-wrap gap-4">
+      <input id="searchInput" type="text" placeholder="Search materials..." class="flex-1 border p-2 rounded" />
+      <select id="supplierSelect" class="border p-2 rounded">
+        <option value="">All Suppliers</option>
+        <option value="Bunnings">Bunnings</option>
+        <option value="Bowens">Bowens</option>
+      </select>
+      <select id="categorySelect" class="border p-2 rounded">
+        <option value="">All Categories</option>
+      </select>
+      <button onclick="loadMaterials()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Search</button>
     </div>
+  </div>
 
-    <!-- Results Table -->
-    <div class="bg-white p-6 rounded-xl shadow overflow-x-auto">
-      <table class="min-w-full table-auto text-left text-sm">
-        <thead class="bg-gray-200">
-          <tr>
-            <th class="p-2">Name</th>
-            <th class="p-2">Supplier</th>
-            <th class="p-2">Category</th>
-            <th class="p-2">Price</th>
-            <th class="p-2">Source</th>
-            <th class="p-2">Scraped At</th>
-          </tr>
-        </thead>
-        <tbody id="materialsTable" class="divide-y"></tbody>
-      </table>
-    </div>
-  </main>
+  <div class="bg-white p-6 rounded-xl shadow overflow-x-auto">
+    <table class="min-w-full table-auto text-left text-sm">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="p-2">Name</th>
+          <th class="p-2">Supplier</th>
+          <th class="p-2">Category</th>
+          <th class="p-2">Price</th>
+          <th class="p-2">Source</th>
+          <th class="p-2">Updated</th>
+        </tr>
+      </thead>
+      <tbody id="materialsTable" class="divide-y"></tbody>
+    </table>
+  </div>
+</main>
 
-  <footer class="text-center text-gray-500 text-sm p-6">
-    &copy; 2025 Kaymar Construction | Powered by Ask Kai
-  </footer>
+<footer class="text-center text-gray-500 text-sm p-6">
+  &copy; 2025 Kaymar Construction | Powered by Ask Kai
+</footer>
 
-  <script>
-    async function loadMaterials() {
-      const search = document.getElementById('searchInput').value;
-      const supplier = document.getElementById('supplierSelect').value;
-      const category = document.getElementById('categorySelect').value;
+<script>
+  async function loadMaterials() {
+    const search = document.getElementById('searchInput').value;
+    const supplier = document.getElementById('supplierSelect').value;
+    const category = document.getElementById('categorySelect').value;
 
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (supplier) params.append('supplier', supplier);
-      if (category) params.append('category', category);
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (supplier) params.append('supplier', supplier);
+    if (category) params.append('category', category);
 
-      const response = await fetch(`https://askkai-backend-clean.onrender.com/materials?${params.toString()}`);
-      const materials = await response.json();
+    const response = await fetch(`https://askkai-backend-clean.onrender.com/materials?${params.toString()}`);
+    const materials = await response.json();
 
-      const table = document.getElementById('materialsTable');
-      table.innerHTML = '';
+    const table = document.getElementById('materialsTable');
+    table.innerHTML = '';
 
-      const categories = new Set();
+    const categories = new Set();
 
-      materials.forEach(material => {
-        const price = material.price_per_unit !== undefined && material.price_per_unit !== null 
-          ? `$${parseFloat(material.price_per_unit).toFixed(2)}`
-          : 'Price N/A';
-        
-        const unit = material.unit ? material.unit : '';
+    materials.forEach(material => {
+      const price = material.price_per_unit ? `$${parseFloat(material.price_per_unit).toFixed(2)}` : "N/A";
+      const unit = material.unit ? material.unit.toUpperCase() : "EA";
 
-        const row = `<tr>
-          <td class="p-2">${material.name}</td>
-          <td class="p-2">${material.supplier}</td>
-          <td class="p-2">${material.category}</td>
-          <td class="p-2">${price} ${unit ? '/ ' + unit : ''}</td>
-          <td class="p-2"><a href="${material.source}" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
-          <td class="p-2">${material.scraped_at ? new Date(material.scraped_at).toLocaleDateString() : ''}</td>
-        </tr>`;
-        
-        table.insertAdjacentHTML('beforeend', row);
-        if (material.category) categories.add(material.category);
-      });
+      const row = `<tr>
+        <td class="p-2">${material.name || "N/A"}</td>
+        <td class="p-2">${material.supplier || "N/A"}</td>
+        <td class="p-2">${material.category || "N/A"}</td>
+        <td class="p-2">${price} / ${unit}</td>
+        <td class="p-2"><a href="${material.source || '#'}" target="_blank" class="text-blue-600 hover:underline">View</a></td>
+        <td class="p-2">${material.scraped_at ? new Date(material.scraped_at).toLocaleDateString() : "N/A"}</td>
+      </tr>`;
+      table.insertAdjacentHTML('beforeend', row);
+      if (material.category) categories.add(material.category);
+    });
 
-      updateCategoryOptions(categories);
-    }
+    updateCategoryOptions(categories);
+  }
 
-    function updateCategoryOptions(categories) {
-      const select = document.getElementById('categorySelect');
-      select.innerHTML = `<option value="">All Categories</option>`;
-      [...categories].sort().forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-        select.appendChild(option);
-      });
-    }
+  function updateCategoryOptions(categories) {
+    const select = document.getElementById('categorySelect');
+    select.innerHTML = `<option value="">All Categories</option>`;
+    [...categories].sort().forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+      select.appendChild(option);
+    });
+  }
 
-    // Auto-load materials on page load
-    window.addEventListener('DOMContentLoaded', loadMaterials);
-  </script>
+  window.addEventListener('DOMContentLoaded', loadMaterials);
+</script>
 
 </body>
 </html>
