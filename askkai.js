@@ -78,6 +78,39 @@ app.post('/chat', async (req, res) => {
   }
 });
 
+// Quote Generator
+app.post('/quote', async (req, res) => {
+  const { messages } = req.body;
+
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Invalid message format.' });
+  }
+
+  const systemPrompt = {
+    role: 'system',
+    content: `You are Kai, a senior estimator and builder. 
+    Always ask for detailed project info, estimate all parts of structure: 
+    stumps, bearers, joists, decking, fasteners. Output in markdown dot-point format.`
+  };
+
+  const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages];
+
+  try {
+    const aiResponse = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: fullMessages,
+      max_tokens: 1500,
+      temperature: 0.5
+    });
+
+    const reply = aiResponse.data.choices[0].message.content.trim();
+    res.json({ reply });
+  } catch (error) {
+    console.error('Quote Generation Error:', error.message);
+    res.status(500).json({ reply: 'Kai couldn’t generate a quote. Please try again.' });
+  }
+});
+
 // Scrape Bowens Materials
 app.post('/scrape/bowens', async (req, res) => {
   const { email } = req.body;
@@ -96,7 +129,7 @@ app.post('/scrape/bowens', async (req, res) => {
   }
 });
 
-// 404 Fallback Route
+// 404 Fallback
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found.' });
 });
