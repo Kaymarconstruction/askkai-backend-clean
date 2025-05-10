@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -21,12 +21,18 @@ const categoryUrls = [
 ];
 
 const scrapeBowens = async () => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: '/usr/bin/chromium-browser', // Path may vary; check with `which chromium-browser` if needed
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+
   const page = await browser.newPage();
 
   for (const url of categoryUrls) {
     try {
       await page.goto(url, { waitUntil: 'networkidle2' });
+
       const materials = await page.evaluate(() => {
         const items = [];
         document.querySelectorAll('.product-item-info').forEach(el => {
@@ -39,7 +45,7 @@ const scrapeBowens = async () => {
             items.push({
               supplier: 'Bowens',
               name,
-              category: window.location.pathname.split('/c/')[1].replace(/\/$/, ''),
+              category: window.location.pathname.split('/c/')[1]?.replace(/\/$/, '') || '',
               price_per_unit: price,
               scraped_at: new Date().toISOString(),
               source: window.location.href
@@ -61,7 +67,6 @@ const scrapeBowens = async () => {
       } else {
         console.warn(`No materials found at ${url}`);
       }
-
     } catch (err) {
       console.error(`Error scraping ${url}:`, err.message);
     }
@@ -70,4 +75,3 @@ const scrapeBowens = async () => {
   await browser.close();
 };
 
-module.exports = { scrapeBowens };
