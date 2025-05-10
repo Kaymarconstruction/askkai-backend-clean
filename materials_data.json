@@ -2,293 +2,771 @@
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 7.90,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Kapoor Hardwood Decking 140x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 13.20,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "ModWood Decking 88x23",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 10.95,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "ModWood Decking 137x23",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 16.80,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "ModWood Marina Decking 137x32",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 24.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Composite Decking 140x23",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 18.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Ironbark Decking 86x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 9.95,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Merbau Decking 90x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 6.95,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Composite Decking 90x23",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 11.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Spotted Gum Decking 140x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 14.75,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Ironbark Decking 86x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 9.95,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Blackbutt Decking 86x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 8.95,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Treated Pine Decking 90x22",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 4.10,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Treated Pine Decking 140x22",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 6.20,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Composite Decking 137x23",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 12.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Merbau Decking 90x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 6.95,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Merbau Decking 140x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 12.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Spotted Gum Decking 86x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 8.85,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Jarrah Decking 86x19",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 9.45,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Composite Decking 140x23",
 "supplier": "Bowens",
 "category": "Decking",
 "price_per_unit": 18.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar Cladding V-Joint 86x19",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 12.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar Cladding Shiplap 133x15",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 14.00,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar DAR KD 67x30",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 12.00,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar DAR KD 91x18",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 10.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar DAR KD 91x40",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 15.00,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar Cladding V-Joint 86x19",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 12.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar Cladding Shiplap 133x15",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 14.00,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar DAR KD 67x30",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 12.00,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar DAR KD 91x18",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 10.50,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Western Red Cedar DAR KD 91x40",
 "supplier": "Bowens",
 "category": "Western Red Cedar",
 "price_per_unit": 15.00,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Treated Pine Sleeper 200x50 H4 CCA",
 "supplier": "Bowens",
 "category": "Sleepers",
 "price_per_unit": 18.00,
-"unit": "ea"
+"unit": "EA"
 },
 {
 "name": "Treated Pine Sleeper 200x75 H4 CCA",
 "supplier": "Bowens",
 "category": "Sleepers",
 "price_per_unit": 27.00,
-"unit": "ea"
+"unit": "EA"
 },
 {
 "name": "Hardwood Sleeper 200x75 Sawn",
 "supplier": "Bowens",
 "category": "Sleepers",
 "price_per_unit": 45.00,
-"unit": "ea"
+"unit": "EA"
 },
 {
 "name": "Merbau Post 90x90 DAR",
 "supplier": "Bowens",
 "category": "Timber Posts",
 "price_per_unit": 25.00,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Merbau Post 115x115 DAR",
 "supplier": "Bowens",
 "category": "Timber Posts",
 "price_per_unit": 35.00,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "ExtremeTimber Treated Pine Post 135x135",
 "supplier": "Bowens",
 "category": "Timber Posts",
 "price_per_unit": 22.00,
-"unit": "lm"
-},{
+"unit": "LM"
+},
+{
 "name": "Structural Pine KD 190 x 45 Untreated",
 "supplier": "Bowens",
 "category": "Framing Timber",
 "price_per_unit": 10.2,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Structural Pine KD 240 x 45 Untreated",
 "supplier": "Bowens",
 "category": "Framing Timber",
 "price_per_unit": 12.8,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "Structural Pine KD 290 x 45 Untreated",
 "supplier": "Bowens",
 "category": "Framing Timber",
 "price_per_unit": 15.5,
-"unit": "lm"
+"unit": "lmLM
 },
 {
 "name": "MGP10 Treated Pine 70 x 35 H2",
 "supplier": "Bowens",
 "category": "Treated Pine",
 "price_per_unit": 4.5,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "MGP10 Treated Pine 90 x 45 H2",
 "supplier": "Bowens",
 "category": "Treated Pine",
 "price_per_unit": 6.0,
-"unit": "lm"
+"unit": "LM"
 },
 {
 "name": "MGP10 Treated Pine 140 x 45 H2",
 "supplier": "Bowens",
 "category": "Treated Pine",
 "price_per_unit": 8.5,
-"unit": "lm"
+"unit": "LM"
 },
+
+    {
+      "name": "MDF Architrave & Skirting Colonial Primed 18 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 3.5,
+      "unit": "LM"
+    },
+    {
+      "name": "MDF Architrave & Skirting Stepped Primed 18 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 3.5,
+      "unit": "LM"
+    },
+    {
+      "name": "Pine Architrave & Skirting Colonial FJ Primed 18 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 4.2,
+      "unit": "LM"
+    },
+    {
+      "name": "Pine Architrave & Skirting Victorian FJ Primed 18 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 4.2,
+      "unit": "LM"
+    },
+    {
+      "name": "Pine Architrave & Skirting Stepped FJ Primed 18 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 4.2,
+      "unit": "LM"
+    },
+    {
+      "name": "Pine Architrave & Skirting Edwardian FJ Primed 18 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 4.2,
+      "unit": "LM"
+    },
+    {
+      "name": "Pine Architrave & Skirting Lambs Tongue FJ Primed 18 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 4.2,
+      "unit": "LM"
+    },
+    {
+      "name": "Pine Architrave & Skirting Half Splayed FJ Primed 18 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 4.2,
+      "unit": "LM"
+    },
+    {
+      "name": "Hardwood Architrave & Skirting Colonial KD 19 x 67",
+      "supplier": "Bowens",
+      "category": "Architraves & Skirting",
+      "price_per_unit": 5.5,
+      "unit": "LM"
+     },
+    {
+      "name": "MDF Scotia Moulding Raw 18 x 18",
+      "supplier": "Bowens",
+      "category": "Mouldings",
+      "price_per_unit": 2.5,
+      "unit": "LM"
+    },
+    {
+      "name": "Treated Pine Ovolo Moulding H3 LOSP Primed 40 x 40",
+      "supplier": "Bowens",
+      "category": "Mouldings",
+      "price_per_unit": 3.8,
+      "unit": "LM"
+    },
+    {
+      "name": "Tasmanian Oak Quad Moulding Round Select 30 x 30",
+      "supplier": "Bowens",
+      "category": "Mouldings",
+      "price_per_unit": 5.5,
+      "unit": "LM"
+    },
+    {
+      "name": "Treated Pine Stile Primed DAR H3 LOSP 66 x 18",
+      "supplier": "Bowens",
+      "category": "Mouldings",
+      "price_per_unit": 4.2,
+      "unit": "LM"
+    },
+    {
+      "name": "Tasmanian Oak Tri Quad Moulding 30 x 30",
+      "supplier": "Bowens",
+      "category": "Mouldings",
+      "price_per_unit": 5.8,
+      "unit": "LM"
+    },
+    {
+  "materials": [
+    {
+      "name": "Treated Pine 70x35 H3 MGP10 LOSP",
+      "supplier": "Bowens",
+      "category": "Treated Pine",
+      "price_per_unit": 4.50,
+      "unit": "LM"
+    },
+    {
+      "name": "Treated Pine 90x35 H3 MGP10 LOSP",
+      "supplier": "Bowens",
+      "category": "Treated Pine",
+      "price_per_unit": 5.80,
+      "unit": "LM"
+    },
+    {
+      "name": "Treated Pine 90x45 H3 MGP10 LOSP",
+      "supplier": "Bowens",
+      "category": "Treated Pine",
+      "price_per_unit": 6.50,
+      "unit": "LM"
+    },
+    {
+      "name": "Treated Pine 140x35 H3 MGP10 LOSP",
+      "supplier": "Bowens",
+      "category": "Treated Pine",
+      "price_per_unit": 7.90,
+      "unit": "LM"
+    },
+    {
+      "name": "Treated Pine 140x45 H3 MGP10 LOSP",
+      "supplier": "Bowens",
+      "category": "Treated Pine",
+      "price_per_unit": 8.50,
+      "unit": "LM"
+    },
+    {
+      "name": "Treated Pine 190x35 H3 MGP10 LOSP",
+      "supplier": "Bowens",
+      "category": "Treated Pine",
+      "price_per_unit": 9.50,
+      "unit": "LM"
+    },
+    {
+      "name": "Fence Paling H3 Treated Pine 100 x 15",
+      "supplier": "Bowens",
+      "category": "Fencing",
+      "price_per_unit": 2.5,
+      "unit": "LM"
+    },
+    {
+      "name": "Fence Paling Tanalised Ecowood Treated 100 x 15",
+      "supplier": "Bowens",
+      "category": "Fencing",
+      "price_per_unit": 2.8,
+      "unit": "LM"
+    },
+    {
+      "name": "PermaTimber Perma Fence Panel Spotted Gum 1800 x 300",
+      "supplier": "Bowens",
+      "category": "Fencing",
+      "price_per_unit": 45.0,
+      "unit": "EA"
+    },
+    {
+      "name": "PermaTimber Perma Fence Panel French Oak 1800 x 300",
+      "supplier": "Bowens",
+      "category": "Fencing",
+      "price_per_unit": 45.0,
+      "unit": "EA"
+    },
+    {
+      "name": "PermaTimber Perma Fence Panel Ebony 1800 x 300",
+      "supplier": "Bowens",
+      "category": "Fencing",
+      "price_per_unit": 45.0,
+      "unit": "EA"
+    },
+    {
+      "name": "100x100mm Cypress Pine Post F7 Rough Sawn Unseasoned",
+      "supplier": "Bowens",
+      "category": "Timber Posts",
+      "price_per_unit": 12.5,
+      "unit": "LM"
+    },
+    {
+      "name": "150x150mm Cypress Pine Post F7 Rough Sawn Unseasoned",
+      "supplier": "Bowens",
+      "category": "Timber Posts",
+      "price_per_unit": 18.0,
+      "unit": "LM"
+    },
+    {
+      "name": "140x140mm Cypress Pine Post F7 Premium DAR Pencil Rounded",
+      "supplier": "Bowens",
+      "category": "Timber Posts",
+      "price_per_unit": 20.0,
+      "unit": "LM"
+    },
+    {
+      "name": "ExtremeTimber® 88x88mm Treated Pine Post GluLam 8 DAR KD H5",
+      "supplier": "Bowens",
+      "category": "Timber Posts",
+      "price_per_unit": 15.0,
+      "unit": "LM"
+    },
+    {
+      "name": "ExtremeTimber® 135x135mm Treated Pine Post GluLam 8 DAR KD H5",
+      "supplier": "Bowens",
+      "category": "Timber Posts",
+      "price_per_unit": 22.0,
+      "unit": "LM"
+    },
+    {
+      "name": "115x115mm Merbau Post GL13 DAR KD Pencil Round Edge",
+      "supplier": "Bowens",
+      "category": "Timber Posts",
+      "price_per_unit": 25.0,
+      "unit": "LM"
+    },
+    {
+      "name": "Treated Pine 190x45 H3 MGP10 LOSP",
+      "supplier": "Bowens",
+      "category": "Treated Pine",
+      "price_per_unit": 10.50,
+      "unit": "LM"
+    },
+            {
+            "name": "200x50mm Treated Pine Sleeper H4 Tan-E Ecowood",
+            "supplier": "Bowens",
+            "category": "Sleepers",
+            "price_per_unit": 18.0,
+            "unit": "EA"
+        },
+        {
+            "name": "200x75mm Treated Pine Sleeper H4 Tan-E Ecowood",
+            "supplier": "Bowens",
+            "category": "Sleepers",
+            "price_per_unit": 27.0,
+            "unit": "EA"
+        },
+        {
+            "name": "200x100mm Treated Pine Sleeper H4 Tan-E Ecowood",
+            "supplier": "Bowens",
+            "category": "Sleepers",
+            "price_per_unit": 39.0,
+            "unit": "EA"
+        },
+        {
+            "name": "Hardwood Sleeper Sawn",
+            "supplier": "Bowens",
+            "category": "Sleepers",
+            "price_per_unit": 45.0,
+            "unit": "EA"
+        },
+        {
+            "name": "Malibu Woodgrain Concrete Sleeper Jasper",
+            "supplier": "Bowens",
+            "category": "Sleepers",
+            "price_per_unit": 55.0,
+            "unit": "EA"
+        },
+        {
+            "name": "Thermory® Thermo-Pine D4 Batten Pencil Round 42 x 42",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 9.07,
+            "unit": "LM"
+        },
+        {
+            "name": "InStyle Blackbutt Batten Pencil Round 42 x 42",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 14.0,
+            "unit": "LM"
+        },
+        {
+            "name": "Lunawood® 42x42mm Pine Solar Batten Full Shade DAR 42 x 42",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 11.0,
+            "unit": "LM"
+        },
+        {
+            "name": "InStyle Spotted Gum Batten Pencil Round 42 x 42",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 13.5,
+            "unit": "LM"
+        },
+        {
+            "name": "42x34mm Pine FJ Finger Jointed Plaster Battens 42 x 34",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 9.0,
+            "unit": "LM"
+        },
+        {
+            "name": "Surround by Laminex® 12mm MR MDF Wall Panel Batten 12 x 1200",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 25.0,
+            "unit": "LM"
+        },
+        {
+            "name": "PermaTimber® CX Castellated Cladding Ebony 150 x 25",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 30.0,
+            "unit": "LM"
+        },
+        {
+            "name": "Period Timber Treated Pine Stile Primed DAR H3 LOSP 90 x 45",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 10.0,
+            "unit": "LM"
+        },
+        {
+            "name": "Knotwood Aluminium 2 Part Batten Woodgrain 50 x 50",
+            "supplier": "Bowens",
+            "category": "Timber Battens",
+            "price_per_unit": 45.0,
+            "unit": "EA"
+        },
+        {
+      "name": "100x50mm Cypress Pine Rough Sawn Wet Cut to Order",
+      "supplier": "Bowens",
+      "category": "Cypress Pine",
+      "price_per_unit": 9.5,
+      "unit": "LM"
+    },
+    {
+      "name": "125x75mm Cypress Pine F7 Rough Sawn Unseasoned",
+      "supplier": "Bowens",
+      "category": "Cypress Pine",
+      "price_per_unit": 12.0,
+      "unit": "LM"
+    },
+    {
+      "name": "150x150mm Cypress Pine F7 Rough Sawn Unseasoned",
+      "supplier": "Bowens",
+      "category": "Cypress Pine",
+      "price_per_unit": 18.0,
+      "unit": "LM"
+    },
+    {
+      "name": "200x200mm Cypress Pine F7 Rough Sawn Wet Cut to Order",
+      "supplier": "Bowens",
+      "category": "Cypress Pine",
+      "price_per_unit": 25.0,
+      "unit": "LM"
+    },
+    {
+      "name": "90x90mm Cypress Pine Post F7 Premium DAR Pencil Rounded",
+      "supplier": "Bowens",
+      "category": "Cypress Pine",
+      "price_per_unit": 15.0,
+      "unit": "EA"
+    },
+        {
+      "name": "Design Pine Handrail Primed H3 LOSP Treated 66 x 42",
+      "supplier": "Bowens",
+      "category": "Handrails & Balustrading",
+      "price_per_unit": 27.5,
+      "unit": "EA"
+    },
+    {
+      "name": "66x30mm Treated Pine Bottom Rail H3 LOSP 42mm Flat 66 x 30",
+      "supplier": "Bowens",
+      "category": "Handrails & Balustrading",
+      "price_per_unit": 22.0,
+      "unit": "EA"
+    },
+    {
+      "name": "Porta Tasmanian Oak Handrail Oval Select 70 x 31",
+      "supplier": "Bowens",
+      "category": "Handrails & Balustrading",
+      "price_per_unit": 77.95,
+      "unit": "EA"
+    },
+    {
+      "name": "Treated Pine Handrail Primed DAR H3 LOSP Timber 66 x 42",
+      "supplier": "Bowens",
+      "category": "Handrails & Balustrading",
+      "price_per_unit": 25.0,
+      "unit": "EA"
+    },
+    {
+      "name": "Treated Pine Breadloaf Handrail PreOiled H3 LOSP 66 x 42",
+      "supplier": "Bowens",
+      "category": "Handrails & Balustrading",
+      "price_per_unit": 30.0,
+      "unit": "EA"
+    },
+    {
+      "name": "Radiata Treated Pine Ladies Waist Handrail H3 LOSP 66 x 42",
+      "supplier": "Bowens",
+      "category": "Handrails & Balustrading",
+      "price_per_unit": 28.0,
+      "unit": "EA"
+    },
+    {
+      "name": "65x42mm Pine Handrail HR6542 Primed DAR H3 LOSP 65 x 42",
+      "supplier": "Bowens",
+      "category": "Handrails & Balustrading",
+      "price_per_unit": 26.0,
+      "unit": "EA"
+    },
+      {
+      "name": "SmartFrame 130x42mm LVL15 Timber Beam H2S",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 15.0,
+      "unit": "LM"
+    },
+    {
+      "name": "SmartFrame 170x42mm LVL15 Timber Beam H2S",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 18.0,
+      "unit": "LM"
+    },
+    {
+      "name": "SmartFrame 200x42mm LVL15 Timber Beam H2S",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 20.0,
+      "unit": "LM"
+    },
+    {
+      "name": "SmartFrame 240x42mm LVL15 Timber Beam H2S",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 22.0,
+      "unit": "LM"
+    },
+    {
+      "name": "SmartFrame 290x42mm LVL15 Timber Beam H3 LOSP",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 25.0,
+      "unit": "LM"
+    },
+    {
+      "name": "SmartFrame 400x75mm LVL15 Timber Beam H3 LOSP",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 35.0,
+      "unit": "LM"
+    },
+    {
+      "name": "SmartFrame 525x75mm LVL15 Timber Beam H2S",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 40.0,
+      "unit": "LM"
+    },
+    {
+      "name": "90x45mm LVL14 Beam H2S Treated",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 12.0,
+      "unit": "LM"
+    },
+    {
+      "name": "240x45mm Structural Pine Beam F7 KD",
+      "supplier": "Bowens",
+      "category": "Timber Beams",
+      "price_per_unit": 14.0,
+      "unit": "LM"
+    }
+  ]
+}
+
+
+    
 
 
