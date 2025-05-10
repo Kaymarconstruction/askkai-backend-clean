@@ -5,6 +5,7 @@ const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
 const { scrapeBowens } = require('./bowensScraper');
+console.log('scrapeBowens Type:', typeof scrapeBowens); // Debug Import Validation
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -17,6 +18,15 @@ app.use(express.json());
 // Root Health Check
 app.get('/', (req, res) => {
   res.json({ message: 'Ask Kai Backend is live!' });
+});
+
+// Health Diagnostic for Puppeteer
+app.get('/health', (req, res) => {
+  res.json({
+    puppeteerPath: process.env.PUPPETEER_EXECUTABLE_PATH || 'Not Set',
+    envLoaded: !!process.env.SUPABASE_URL,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // GET /materials with filters
@@ -97,3 +107,4 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
 });
+
