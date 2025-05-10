@@ -15,7 +15,8 @@
     "express": "^4.18.2",
     "openai": "^3.2.1",
     "stripe": "^12.8.0",
-    "puppeteer-core": "^21.3.8"
+    "puppeteer": "^21.3.8",
+"PUPPETEER_EXECUTABLE_PATH": "/usr/bin/google-chrome"
   },
   "engines": {
     "node": ">=14"
