@@ -1,122 +1,125 @@
-{ "materials": ]
+{
+  "materials": [
+    {
       "name": "Kapoor Hardwood Decking 90x19",
       "supplier": "Bowens",
       "category": "Decking",
       "price_per_unit": 7.90,
       "unit": "LM"
-      },
-      {
-"name": "Kapoor Hardwood Decking 140x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 13.20,
-"unit": "LM"
-},
+    },
+    {
+      "name": "Kapoor Hardwood Decking 140x19",
+      "supplier": "Bowens",
+      "category": "Decking",
+      "price_per_unit": 13.20,
+      "unit": "LM"
+    },
+    {
+      "name": "ModWood Decking 88x23",
+      "supplier": "Bowens",
+      "category": "Decking",
+      "price_per_unit": 10.95,
+      "unit": "LM"
+    },
+    {
+      "name": "ModWood Decking 137x23",
+      "supplier": "Bowens",
+      "category": "Decking",
+      "price_per_unit": 16.80,
+      "unit": "LM"
+    },
+    {
+      "name": "ModWood Marina Decking 137x32",
+      "supplier": "Bowens",
+      "category": "Decking",
+      "price_per_unit": 24.50,
+      "unit": "LM"
+    },
+    {
+      "name": "Composite Decking 140x23",
+      "supplier": "Bowens",
+      "category": "Decking",
+      "price_per_unit": 18.50,
+      "unit": "LM"
+    },
 {
-"name": "ModWood Decking 88x23",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 10.95,
-"unit": "LM"
-},
 {
-"name": "ModWood Decking 137x23",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 16.80,
-"unit": "LM"
-},
-{
-"name": "ModWood Marina Decking 137x32",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 24.50,
-"unit": "LM"
-},
-{
-"name": "Composite Decking 140x23",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 18.50,
-"unit": "LM"
-},
-{
-"name": "Ironbark Decking 86x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 9.95,
-"unit": "LM"
-},
-{
-"name": "Merbau Decking 90x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 6.95,
-"unit": "LM"
-},
-{
-"name": "Composite Decking 90x23",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 11.50,
-"unit": "LM"
-},
-{
-"name": "Spotted Gum Decking 140x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 14.75,
-"unit": "LM"
-},
-{
-"name": "Ironbark Decking 86x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 9.95,
-"unit": "LM"
-},
-{
-"name": "Blackbutt Decking 86x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 8.95,
-"unit": "LM"
-},
-{
-"name": "Treated Pine Decking 90x22",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 4.10,
-"unit": "LM"
-},
-{
-"name": "Treated Pine Decking 140x22",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 6.20,
-"unit": "LM"
-},
-{
-"name": "Composite Decking 137x23",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 12.50,
-"unit": "LM"
-},
-{
-"name": "Merbau Decking 90x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 6.95,
-"unit": "LM"
-},
-{
-"name": "Merbau Decking 140x19",
-"supplier": "Bowens",
-"category": "Decking",
-"price_per_unit": 12.50,
-"unit": "LM"
-},
+        "name": "Ironbark Decking 86x19",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 9.95,
+        "unit": "LM"
+    },
+    {
+        "name": "Merbau Decking 90x19",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 6.95,
+        "unit": "LM"
+    },
+    {
+        "name": "Composite Decking 90x23",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 11.50,
+        "unit": "LM"
+    },
+    {
+        "name": "Spotted Gum Decking 140x19",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 14.75,
+        "unit": "LM"
+    },
+    {
+        "name": "Ironbark Decking 86x19",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 9.95,
+        "unit": "LM"
+    },
+    {
+        "name": "Blackbutt Decking 86x19",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 8.95,
+        "unit": "LM"
+    },
+    {
+        "name": "Treated Pine Decking 90x22",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 4.10,
+        "unit": "LM"
+    },
+    {
+        "name": "Treated Pine Decking 140x22",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 6.20,
+        "unit": "LM"
+    },
+    {
+        "name": "Composite Decking 137x23",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 12.50,
+        "unit": "LM"
+    },
+    {
+        "name": "Merbau Decking 90x19",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 6.95,
+        "unit": "LM"
+    },
+    {
+        "name": "Merbau Decking 140x19",
+        "supplier": "Bowens",
+        "category": "Decking",
+        "price_per_unit": 12.50,
+        "unit": "LM"
+    }
 {
 "name": "Spotted Gum Decking 86x19",
 "supplier": "Bowens",
