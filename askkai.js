@@ -5,7 +5,6 @@ const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
 const { scrapeBowens } = require('./bowensScraper');
-console.log('scrapeBowens Type:', typeof scrapeBowens); // Debug Import Validation
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -20,7 +19,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'Ask Kai Backend is live!' });
 });
 
-// Health Diagnostic for Puppeteer
+// Health Diagnostic
 app.get('/health', (req, res) => {
   res.json({
     puppeteerPath: process.env.PUPPETEER_EXECUTABLE_PATH || 'Not Set',
@@ -58,12 +57,10 @@ app.post('/chat', async (req, res) => {
 
   const systemPrompt = {
     role: 'system',
-    content: `You are Kai, a senior estimator and builder with 20+ years of experience. You calculate material takeoffs and provide expert building advice.`
+    content: 'You are Kai, a senior estimator and builder with 20+ years of experience. You calculate material takeoffs and provide expert building advice.'
   };
 
-  const fullMessages = messages.some(m => m.role === 'system') 
-    ? messages 
-    : [systemPrompt, ...messages];
+  const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages];
 
   try {
     const aiResponse = await openai.createChatCompletion({
@@ -107,4 +104,3 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
 });
-
