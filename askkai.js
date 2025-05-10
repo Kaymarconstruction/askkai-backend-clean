@@ -1,12 +1,15 @@
 const express = require('express');
 const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
 const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// Load Materials Data Directly into Memory
+const materialsData = JSON.parse(fs.readFileSync('./materials_data.json', 'utf-8')).materials;
+
 const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
 
 app.use(cors());
@@ -44,18 +47,12 @@ app.post('/quote', async (req, res) => {
     const prices = {};
 
     for (const material of materials) {
-      // Clean material name by removing anything in parentheses
-      const cleanedMaterial = material.replace(/.*?/g, '').trim();
+      const cleanedMaterial = material.replace(/.*?/g, '').trim().toLowerCase();
 
-      const { data, error } = await supabase
-        .from('materials')
-        .select('name, price_per_unit, unit')
-        .ilike('name', `%${cleanedMaterial}%`)
-        .limit(1)
-        .single();
+      const found = materialsData.find(item => item.name.toLowerCase().includes(cleanedMaterial));
 
-      if (data) {
-        prices[material] = `${data.price_per_unit} per ${data.unit}`;
+      if (found) {
+        prices[material] = `${found.price_per_unit} per ${found.unit}`;
       } else {
         prices[material] = 'Price Not Found';
       }
