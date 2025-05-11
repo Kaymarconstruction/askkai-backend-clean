@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Configuration, OpenAIApi } = require('openai');
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
@@ -10,59 +11,72 @@ const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY
 }));
 
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
 app.use(cors());
 app.use(express.json());
 
-// In-memory conversation tracking
-const conversationState = {};
+// Constants
+const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE) || 10;
+const DEFAULT_BAG_VOLUME = 0.01; // m³ per 20kg bag
+
+// Helpers
+async function getUser(email) {
+  if (!email) throw new Error('User email is required.');
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single();
+  if (error || !data) throw new Error('User not found.');
+  return data;
+}
+
+async function updatePromptCount(email) {
+  const user = await getUser(email);
+  const newCount = (user.prompt_count || 0) + 1;
+
+  const { error } = await supabase
+    .from('users')
+    .update({ prompt_count: newCount })
+    .eq('email', email);
+
+  if (error) throw new Error('Failed to update prompt count.');
+  return newCount;
+}
 
 // Chat Endpoint
 app.post('/chat', async (req, res) => {
-  const { messages, sessionId } = req.body;
-  const sessionKey = sessionId || 'default';
+  const { messages, userEmail } = req.body;
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'No conversation history provided.' });
   }
 
-  const isNewConversation = !conversationState[sessionKey];
-  if (isNewConversation) conversationState[sessionKey] = true;
-
-  console.log(`[Chat] Session: ${sessionKey} | New: ${isNewConversation} | Messages: ${messages.length}`);
-
-  const systemPrompt = {
-    role: 'system',
-    content: `
-      You are Kai, a highly experienced Aussie construction estimator and tradie mate.
-      Speak like a knowledgeable bloke on site—relaxed but professional.
-
-      - ONLY start a response with "G'day" if this is the first user message or start of a new topic. 
-      - If continuing an existing conversation, do NOT start with "G'day".
-      - First Interaction: ${isNewConversation}
-
-      Always apply AS1684 and AS2870 building codes for posts, stumps, fences, and decks.
-      - Calculate hole size: 3 × post width, depth defaults to 600mm (VIC) or 450mm (QLD).
-      - Concrete volume: π × (diameter/2)^2 × depth × number of holes.
-      - Concrete bags: Total m³ / 0.01m³ per 20kg bag. Round up.
-      - Prompt for missing critical details (soil type, slope, fence height, region).
-      - If uncertain, state assumptions clearly before the material list.
-      - Provide short advice (10–30 words) before listing materials.
-      - Output materials as clean dot-point lists, optimized for standard lengths and minimal waste.
-      - Default to VIC region and Class A soil if not specified. Do NOT assume NSW.
-      - Keep tone light and friendly, sprinkle a bit of cheeky Aussie character, but don’t overdo it.
-
-      IMPORTANT: If asked for spans, always clarify timber size, grade, and load before answering. 
-      Use AS1684 for span recommendations. 
-
-      Do NOT repeat "G'day" unnecessarily in every response.
-    `
-  };
-
-  const fullMessages = messages.some(m => m.role === 'system')
-    ? messages
-    : [systemPrompt, ...messages];
-
   try {
+    const user = await getUser(userEmail);
+    if (user.plan_tier === 'Free' && user.prompt_count >= PROMPT_LIMIT_FREE) {
+      return res.json({ reply: 'You’ve hit your free prompt limit, mate! Time for an upgrade.' });
+    }
+
+    const systemPrompt = {
+      role: 'system',
+      content: `
+        You are Kai, a highly experienced Aussie construction estimator.
+        - ONLY greet with "G'day" for new chats.
+        - Follow AS1684 and AS2870 codes.
+        - Calculate concrete, post holes, spans properly.
+        - Use dot-points for material lists.
+        - Keep it short, clear, with light Aussie personality.
+        - Default to VIC unless specified.
+        - Clarify missing info before giving an estimate.
+      `
+    };
+
+    const fullMessages = messages.some(m => m.role === 'system')
+      ? messages
+      : [systemPrompt, ...messages];
+
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
       messages: fullMessages,
@@ -70,26 +84,41 @@ app.post('/chat', async (req, res) => {
       temperature: 0.7
     });
 
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
-                   'Kai is a bit stumped. Try again shortly.';
-    res.json({ reply });
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() ||
+      'Kai’s stumped. Give it another go, mate.';
+
+    const updatedCount = await updatePromptCount(userEmail);
+
+    res.json({ reply, promptCount: updatedCount });
 
   } catch (error) {
-    console.error('Chat Error:', error.response?.data || error.message);
-    res.status(500).json({ reply: 'Kai had an error, give it another crack shortly.' });
+    console.error('Chat Error:', error);
+    res.status(500).json({ reply: 'Kai hit a snag. Try again shortly.' });
   }
 });
 
-// Concrete & Footing Helper API
+// Supplier Fetch Endpoint
+app.get('/suppliers', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('supplier').select('*');
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ suppliers: data });
+  } catch (err) {
+    console.error('Supplier Fetch Error:', err);
+    res.status(500).json({ error: 'Could not fetch suppliers.' });
+  }
+});
+
+// Concrete & Footing Calculator
 app.post('/calculate-footings', (req, res) => {
-  const { postSizeMM, postCount, region = 'VIC' } = req.body;
+  const { postSizeMM, postCount, region = 'VIC', bagVolumeM3 = DEFAULT_BAG_VOLUME } = req.body;
 
   if (!postSizeMM || !postCount) {
     return res.status(400).json({ error: 'Post size and count required.' });
   }
 
   const embedmentDepths = { VIC: 600, QLD: 450 };
-  const regionKey = (region || 'VIC').toUpperCase();
+  const regionKey = region.toUpperCase();
   const embedmentMM = embedmentDepths[regionKey] || 600;
 
   const holeDiameterMM = postSizeMM * 3;
@@ -98,7 +127,7 @@ app.post('/calculate-footings', (req, res) => {
 
   const volumePerHoleM3 = Math.PI * Math.pow(holeRadiusM, 2) * depthM;
   const totalVolumeM3 = volumePerHoleM3 * postCount;
-  const concreteBags = Math.ceil(totalVolumeM3 / 0.01);
+  const concreteBags = Math.ceil(totalVolumeM3 / bagVolumeM3);
 
   res.json({
     holeDiameterMM,
