@@ -74,4 +74,4 @@ app.post('/quote', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
-})
+});
