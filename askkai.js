@@ -13,19 +13,22 @@ const openai = new OpenAIApi(new Configuration({
 app.use(cors());
 app.use(express.json());
 
-// Simple In-Memory Conversation Tracking
+// In-memory conversation tracking
 const conversationState = {};
 
 // Chat Endpoint
 app.post('/chat', async (req, res) => {
   const { messages, sessionId } = req.body;
+  const sessionKey = sessionId || 'default';
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'No conversation history provided.' });
   }
 
-  const isNewConversation = !conversationState[sessionId];
-  if (isNewConversation) conversationState[sessionId] = true;
+  const isNewConversation = !conversationState[sessionKey];
+  if (isNewConversation) conversationState[sessionKey] = true;
+
+  console.log(`[Chat] Session: ${sessionKey} | New: ${isNewConversation} | Messages: ${messages.length}`);
 
   const systemPrompt = {
     role: 'system',
