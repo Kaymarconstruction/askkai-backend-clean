@@ -71,9 +71,3 @@ app.listen(PORT, () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
 });
 
-
-This version directly queries Supabase for pricing, enriches the AI-generated material list, and appends a clear pricing disclaimer. It’s production-ready.
-
-a. Add an endpoint /quote/csv to generate and return quotes as downloadable CSV files.
-b. Implement in-memory caching using Map() to avoid repeated DB queries within a single request cycle.
-
