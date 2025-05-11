@@ -2,7 +2,7 @@ module.exports = {
   // Masonry Calculations
   brickQuantity(wallAreaM2, brickLengthM, brickHeightM) {
     const brickFaceArea = brickLengthM * brickHeightM;
-    return Math.ceil((wallAreaM2 / brickFaceArea) * 1.1);
+    return Math.ceil((wallAreaM2 / brickFaceArea) * 1.1); // 10% Waste
   },
 
   mortarVolume(brickCount, mortarVolumePerBrickM3 = 0.0005) {
@@ -10,12 +10,12 @@ module.exports = {
   },
 
   wallTies(wallAreaM2) {
-    return Math.ceil(wallAreaM2 * 2.5);
+    return Math.ceil(wallAreaM2 * 2.5); // 2.5 ties per m2
   },
 
   // Plumbing Calculations
   pipeLength(buildingPerimeterM, verticalRunsM) {
-    return Math.ceil((buildingPerimeterM + verticalRunsM) * 1.1);
+    return Math.ceil((buildingPerimeterM + verticalRunsM) * 1.1); // 10% Extra for fittings
   },
 
   waterTankSize(dailyUsagePerPersonL, numPeople, storageDays) {
@@ -23,7 +23,7 @@ module.exports = {
   },
 
   waterFlowRateGravity(headHeightM) {
-    return (0.278 * Math.sqrt(headHeightM)).toFixed(2);
+    return (0.278 * Math.sqrt(headHeightM)).toFixed(2); // Litres per second
   },
 
   // Electrical Calculations
@@ -32,7 +32,7 @@ module.exports = {
   },
 
   cableCurrent(loadW, voltageV) {
-    return (loadW / voltageV).toFixed(2);
+    return (loadW / voltageV).toFixed(2); // Amps
   },
 
   lightingPoints(roomAreaM2, lightCoverageM2) {
@@ -40,7 +40,7 @@ module.exports = {
   },
 
   powerSockets(roomAreaM2) {
-    return Math.ceil(roomAreaM2 / 4);
+    return Math.ceil(roomAreaM2 / 4); // 1 socket per 4m²
   },
 
   // Plasterboard Calculations
@@ -49,11 +49,11 @@ module.exports = {
   },
 
   jointCompound(areaM2) {
-    return (areaM2 * 0.5).toFixed(2);
+    return (areaM2 * 0.5).toFixed(2); // 0.5kg per m²
   },
 
   plasterboardScrews(sheetCount) {
-    return sheetCount * 50;
+    return sheetCount * 50; // 50 screws per sheet
   },
 
   // Concreting Calculations
@@ -66,7 +66,7 @@ module.exports = {
   },
 
   rebarLapLength(diameterMM) {
-    return diameterMM * 40;
+    return diameterMM * 40; // 40x bar diameter
   },
 
   // Carpentry Calculations
@@ -99,7 +99,7 @@ module.exports = {
   },
 
   beamDeflection(spanMM) {
-    return (spanMM / 360).toFixed(2);
+    return (spanMM / 360).toFixed(2); // mm deflection limit
   },
 
   partitionStudCount(wallLengthMM, studSpacingMM) {
@@ -111,12 +111,12 @@ module.exports = {
   },
 
   lintelLength(openingWidthM) {
-    return openingWidthM + 0.6; // 300mm each side
+    return +(openingWidthM + 0.6).toFixed(2); // 300mm bearing each side
   },
 
   // Roofing Calculations
   roofAreaGable(widthM, slopeLengthM) {
-    return widthM * slopeLengthM * 2;
+    return (widthM * slopeLengthM * 2).toFixed(2);
   },
 
   roofTileCount(roofAreaM2, tileCoverageM2) {
