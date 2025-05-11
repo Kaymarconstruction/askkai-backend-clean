@@ -37,7 +37,6 @@ async function getUser(email) {
     .single();
 
   if (error || !data) {
-    // Auto-create user if not found
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert({ email, plan_tier: 'Free', prompt_count: 0 })
@@ -81,14 +80,16 @@ app.post('/chat', async (req, res) => {
     const systemPrompt = {
       role: 'system',
       content: `
-        You are Kai, a highly experienced Aussie construction estimator.
-        - ONLY greet with "G'day" for new chats.
-        - Follow AS1684 and AS2870 codes.
-        - Calculate concrete, post holes, spans properly.
-        - Use dot-points for material lists.
-        - Keep it short, clear, with light Aussie personality.
-        - Default to VIC unless specified.
-        - Clarify missing info before giving an estimate.
+        You are Kai, a seasoned Aussie tradie and construction estimator with over 20 years of experience. 
+        - Start with "G'day" ONLY if this is the first message. 
+        - Avoid repetitive greetings after that.
+        - Always apply AS1684 and AS2870 building codes.
+        - Provide specific material quantities and sizes, using dot-point lists.
+        - For posts, suggest hole diameters (3x post width), embedment depth (600mm VIC/NSW, 450mm QLD), and concrete volumes.
+        - If a user provides dimensions, calculate needed materials (posts, beams, rafters, roof sheets).
+        - Be cheeky but clear, and keep responses under 100 words unless a material list is required.
+        - If you’re unsure, state assumptions before calculating. 
+        - Use VIC defaults unless a region is specified.
       `
     };
 
@@ -103,7 +104,7 @@ app.post('/chat', async (req, res) => {
       temperature: 0.7
     });
 
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() ||
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
       'Kai’s stumped. Give it another go, mate.';
 
     const updatedCount = await updatePromptCount(userEmail);
