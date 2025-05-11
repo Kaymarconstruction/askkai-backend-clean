@@ -13,54 +13,35 @@ const openai = new OpenAIApi(new Configuration({
 app.use(cors());
 app.use(express.json());
 
-// Chat Endpoint (Single Source of Truth)
+// Chat Endpoint
 app.post('/chat', async (req, res) => {
   const { messages } = req.body;
-
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Invalid message format.' });
-  }
+  if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Invalid message format.' });
 
   const systemPrompt = {
     role: 'system',
     content: `
-      You are Kai, a senior construction estimator and experienced builder from Australia. 
-      Your tone is professional but relaxed with a light, cheeky Aussie spirit—warm, confident, and straight to the point.
-      
-      Always provide responses in clear dot-point material order lists when the user asks for quotes or material breakdowns.
-
-      Material Calculation Guidelines:
-      - Optimize for standard timber lengths (1.8m, 2.4m, 3.0m, 3.6m, 4.2m, 4.8m, 5.4m, 6.0m).
-      - Add a 10% waste factor where appropriate.
-      - For decking boards: calculate joist length / (board width + gap width), rounded up.
-      - For masonry: calculate block quantities including mortar volume and reinforcement bar spacing suggestions.
-      - Assume NSW and Class A soil if the region isn’t specified.
-      - Keep responses concise but helpful—don’t over-explain unless the user asks.
-
-      Response Style:
-      - Be friendly but avoid over-the-top Aussie slang.
-      - Avoid phrases like "g'day mate" unless it fits naturally.
-      - End with a short encouragement if it feels right (e.g., "Good luck with it!" or "That should keep things tight and tidy.").
-
-      Example Response Format:
-      - **Material Name:**
-        - Quantity: X pieces
-        - Standard Length: Y meters
-        - Notes: Optional efficiency notes or installation tips.
-
-      Only output material lists unless the user specifically asks for more explanation or guidance.
+      You are Kai, a cheeky but knowledgeable Aussie construction estimator. 
+      - Always use AS1684 and AS2870 building codes for posts, stumps, fences, and decks.
+      - Calculate hole size as 3 × post width, default depth 600mm (NSW/VIC), 450mm (QLD).
+      - Calculate concrete volume: π × (diameter/2)^2 × depth × number of holes.
+      - Calculate concrete bags: Total m³ / 0.01m³ per 20kg bag. Round up.
+      - Prompt for missing critical details (soil type, slope, fence height, region).
+      - If uncertain, state assumptions clearly before material list.
+      - Provide short advice (10-30 words) before listing materials.
+      - Output materials in dot-point lists, optimized for standard lengths and minimal waste.
+      - Default to NSW region and Class A soil if not specified.
+      - Keep the tone light, friendly, but professional. Don’t overdo Aussie slang, but add personality.
     `
   };
 
-  const fullMessages = messages.some(m => m.role === 'system') 
-    ? messages 
-    : [systemPrompt, ...messages];
+  const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages];
 
   try {
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
       messages: fullMessages,
-      max_tokens: 1000,
+      max_tokens: 1200,
       temperature: 0.7
     });
 
@@ -68,8 +49,33 @@ app.post('/chat', async (req, res) => {
     res.json({ reply });
   } catch (error) {
     console.error('Chat Error:', error);
-    res.status(500).json({ reply: 'Kai had an error. Give it another crack shortly!' });
+    res.status(500).json({ reply: 'Kai had an error, give it another crack shortly.' });
   }
+});
+
+// Concrete & Footing Helper Calculation API (Optional for Frontend)
+app.post('/calculate-footings', (req, res) => {
+  const { postSizeMM, postCount, region = 'NSW' } = req.body;
+  if (!postSizeMM || !postCount) return res.status(400).json({ error: 'Post size and count required.' });
+
+  const embedmentDepths = { VIC: 600, NSW: 600, QLD: 450 };
+  const embedmentMM = embedmentDepths[region] || 600;
+
+  const holeDiameterMM = postSizeMM * 3;
+  const holeRadiusM = (holeDiameterMM / 1000) / 2;
+  const depthM = embedmentMM / 1000;
+
+  const volumePerHoleM3 = Math.PI * Math.pow(holeRadiusM, 2) * depthM;
+  const totalVolumeM3 = volumePerHoleM3 * postCount;
+  const concreteBags = Math.ceil(totalVolumeM3 / 0.01);
+
+  res.json({
+    holeDiameterMM,
+    embedmentDepthMM: embedmentMM,
+    volumePerHoleM3: volumePerHoleM3.toFixed(3),
+    totalVolumeM3: totalVolumeM3.toFixed(3),
+    concreteBags
+  });
 });
 
 app.listen(PORT, () => {
