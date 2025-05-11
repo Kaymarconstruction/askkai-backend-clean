@@ -12,6 +12,33 @@ const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_
 app.use(cors());
 app.use(express.json());
 
+// Health Check Endpoint
+app.get('/health', async (req, res) => {
+  try {
+    const aiTest = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: 'Test connection.' }],
+      max_tokens: 10
+    });
+
+    const { data: supabaseTest, error: supabaseError } = await supabase
+      .from('materials')
+      .select('name')
+      .limit(1);
+
+    if (supabaseError) throw new Error(`Supabase Error: ${supabaseError.message}`);
+
+    res.json({
+      status: 'OK',
+      aiReply: aiTest.data.choices[0].message.content.trim(),
+      supabaseTest
+    });
+  } catch (err) {
+    console.error('Health Check Failed:', err);
+    res.status(500).json({ status: 'FAIL', error: err.message });
+  }
+});
+
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
 
