@@ -1,112 +1,67 @@
-const express = require('express');
-const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
-const { Configuration, OpenAIApi } = require('openai');
-require('dotenv').config();
+const user = sessionStorage.getItem('askkaiUser');
+if (!user) window.location.href = 'signin.html';
+const isMark = user === 'mark@kaymarconstruction.com';
+let promptCount = parseInt(localStorage.getItem('promptCount') || '0');
+const MAX_FREE_PROMPTS = 10;
+const messages = [];
 
-const app = express();
-const PORT = process.env.PORT || 10000;
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
+function toggleMenu() {
+  document.getElementById('menuDropdown').classList.toggle('hidden');
+}
 
-app.use(cors());
-app.use(express.json());
+function logoutUser() {
+  sessionStorage.clear();
+  localStorage.removeItem('promptCount');
+  localStorage.removeItem('kaiTokens');
+  window.location.href = 'logout.html';
+}
 
-// Health Check Endpoint
-app.get('/health', async (req, res) => {
-  try {
-    const aiTest = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: 'Test connection.' }],
-      max_tokens: 10
-    });
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const askInput = document.getElementById('askInput');
+  const kaiReply = document.getElementById('kaiReply');
+  const userQuestion = askInput.value.trim();
+  if (!userQuestion) return;
 
-    const { data: supabaseTest, error: supabaseError } = await supabase
-      .from('materials')
-      .select('name')
-      .limit(1);
-
-    if (supabaseError) throw new Error(`Supabase Error: ${supabaseError.message}`);
-
-    res.json({
-      status: 'OK',
-      aiReply: aiTest.data.choices[0].message.content.trim(),
-      supabaseTest
-    });
-  } catch (err) {
-    console.error('Health Check Failed:', err);
-    res.status(500).json({ status: 'FAIL', error: err.message });
-  }
-});
-
-app.post('/quote', async (req, res) => {
-  const { messages } = req.body;
-
-  if (!messages || !Array.isArray(messages)) {
-    console.error('Invalid message format received:', req.body);
-    return res.status(400).json({ error: 'Invalid message format.' });
+  if (!isMark && promptCount >= MAX_FREE_PROMPTS) {
+    alert("You’ve hit your free limit. Time to upgrade.");
+    window.location.href = 'upgrade.html';
+    return;
   }
 
-  const systemPrompt = {
-    role: 'system',
-    content: 'You are Kai, a senior estimator and builder. Generate a material list only. Use dot-points. List materials clearly without extra commentary.'
-  };
+  messages.push({ role: "user", content: userQuestion });
 
-  const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages];
+  const qaContainer = document.createElement('div');
+  qaContainer.className = 'mb-6';
+
+  const userText = document.createElement('p');
+  userText.className = 'text-right text-blue-700 font-semibold mb-2';
+  userText.textContent = `You: ${userQuestion}`;
+  qaContainer.appendChild(userText);
+
+  const kaiText = document.createElement('p');
+  kaiText.className = 'text-left text-green-600 font-semibold whitespace-pre-wrap';
+  const cursor = document.createElement('span');
+  cursor.className = 'blinking-cursor';
+  kaiText.textContent = "Kai is thinking...";
+  kaiText.appendChild(cursor);
+  qaContainer.appendChild(kaiText);
+
+  kaiReply.appendChild(qaContainer);
+  kaiReply.scrollTop = kaiReply.scrollHeight;
+  askInput.value = "";
 
   try {
-    console.log('Received messages:', JSON.stringify(fullMessages, null, 2));
-
-    const aiResponse = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: fullMessages,
-      max_tokens: 1000,
-      temperature: 0.6
+    const response = await fetch('https://askkai-backend-clean.onrender.com/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages })
     });
 
-    console.log('AI Response:', JSON.stringify(aiResponse.data, null, 2));
-
-    const materialList = aiResponse.data.choices[0].message.content.trim();
-
-    const materials = materialList
-      .split('\n')
-      .filter(line => line.startsWith('-'))
-      .map(line => line.replace('-', '').split(':')[0].trim());
-
-    const prices = {};
-
-    for (const material of materials) {
-      console.log(`Querying Supabase for material: ${material}`);
-
-      const { data, error } = await supabase
-        .from('materials')
-        .select('name, price_per_unit, unit')
-        .ilike('name', `%${material}%`)
-        .limit(1)
-        .single();
-
-      if (error) {
-        console.error(`Supabase error for material ${material}:`, error);
-      }
-
-      console.log('Supabase Data:', data);
-
-      prices[material] = data ? `${data.price_per_unit} per ${data.unit}` : 'Price Not Found';
-    }
-
-    const enrichedQuote = materialList.replace(/^\-\s*(.*?):/gm, (match, p1) => {
-      return `- ${p1}: (${prices[p1] || 'Price Not Found'})`;
-    });
-
-    const disclaimer = '\n\n*Prices are estimates based on current supplier data. Please confirm with suppliers before purchasing.*';
-
-    res.json({ reply: `${enrichedQuote}${disclaimer}` });
+    const data = await response.json();
+    const finalText = data.reply || "Kai’s stumped. Try again shortly.";
+    kaiText.textContent = finalText;
   } catch (error) {
-    console.error('Quote Generation Error:', error);
-    res.status(500).json({ reply: 'Kai had an error, please try again shortly.' });
+    console.error('Fetch error:', error);
+    kaiText.textContent = "Kai had an error. Please try again.";
   }
-});
-
-app.listen(PORT, () => {
-  console.log(`Ask Kai backend running on port ${PORT}`);
 });
