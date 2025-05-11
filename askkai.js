@@ -14,7 +14,7 @@ const openai = new OpenAIApi(new Configuration({
 app.use(cors());
 app.use(express.json());
 
-// Chat Endpoint (GPT)
+// Chat Endpoint (GPT) - Enhanced Prompt
 app.post('/chat', async (req, res) => {
   const { messages } = req.body;
 
@@ -24,7 +24,17 @@ app.post('/chat', async (req, res) => {
 
   const systemPrompt = {
     role: 'system',
-    content: 'You are Kai, an experienced builder and carpenter. Provide clear, concise advice on construction, materials, and related coding tools. Be professional and friendly.'
+    content: `
+      You are Kai, an experienced builder and carpenter. 
+      Provide clear, structured advice using dot-point material lists.
+      When discussing material orders:
+      - Optimize for standard timber lengths to minimize waste.
+      - Default to Class A soil if soil type is not specified.
+      - Assume embedment depths based on the user's Australian region (600mm for VIC and NSW, 450mm for QLD).
+      - Always output the exact number of standard lengths required.
+      - Do not suggest multiple length options; recommend only the most suitable length.
+      Be concise, professional, and friendly. Avoid long-winded explanations unless asked.
+    `
   };
 
   const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages];
@@ -45,7 +55,7 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// Structured Quote Endpoint (Code-Based)
+// Structured Quote Endpoint (Code-Based Logic)
 app.post('/structured-quote', (req, res) => {
   const {
     deckLengthM,
@@ -56,7 +66,8 @@ app.post('/structured-quote', (req, res) => {
     joistSize,
     deckingBoardSize,
     joistSpacingMM = 450,
-    region = 'VIC' // Default to VIC standards
+    region = 'VIC', // Default region
+    soilClass = 'A' // Default soil class if not specified
   } = req.body;
 
   if (!deckLengthM || !deckWidthM || !deckHeightMM || !stumpSize || !bearerSize || !joistSize || !deckingBoardSize) {
@@ -67,17 +78,16 @@ app.post('/structured-quote', (req, res) => {
     const standardLengths = [1.8, 2.4, 3.0, 3.6, 4.2, 4.8, 5.4, 6.0];
     const results = [];
 
-    // Regional embedment depths (future-ready, currently static)
-    const embedmentDepths = { VIC: 600, NSW: 600, QLD: 450 }; 
+    // Regional Embedment Depths (future configurable)
+    const embedmentDepths = { VIC: 600, NSW: 600, QLD: 450 };
     const embedmentMM = embedmentDepths[region] || 600;
 
-    // 1. Stumps
+    // 1. Stumps Calculation
     const stumpTotalLengthMM = deckHeightMM + embedmentMM;
     const stumpLengthM = stumpTotalLengthMM / 1000;
-
     const optimalStumpLength = standardLengths.find(l => l >= stumpLengthM) || 2.4;
-    const stumpsNeeded = 9;
 
+    const stumpsNeeded = 9; // Default grid assumption; could be made dynamic later
     const stumpsPerLength = Math.floor(optimalStumpLength / stumpLengthM);
     const stumpLengthsRequired = Math.ceil(stumpsNeeded / stumpsPerLength);
 
@@ -115,7 +125,7 @@ app.post('/structured-quote', (req, res) => {
 
     res.json({
       structuredMaterials: results,
-      note: `Optimized for standard lengths and minimal waste. Embedment depth based on ${region} code: ${embedmentMM}mm.`
+      note: `Optimized for standard lengths and minimal waste. Region: ${region}, Soil Class: ${soilClass}, Embedment depth: ${embedmentMM}mm.`
     });
   } catch (error) {
     console.error('Structured Quote Error:', error);
