@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Configuration, OpenAIApi } = require('openai');
-const calculations = require('./calculations'); // Import the new calculations module
+const calculations = require('./calculations'); // Calculation logic module
 require('dotenv').config();
 
 const app = express();
@@ -14,7 +14,7 @@ const openai = new OpenAIApi(new Configuration({
 app.use(cors());
 app.use(express.json());
 
-// General Chat Endpoint
+// Chat Endpoint (GPT)
 app.post('/chat', async (req, res) => {
   const { messages } = req.body;
 
@@ -45,7 +45,7 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// Quote Generator Endpoint (Material List Only, No Pricing)
+// Quote Generator (GPT-Based)
 app.post('/quote', async (req, res) => {
   const { messages } = req.body;
 
@@ -76,26 +76,61 @@ app.post('/quote', async (req, res) => {
   }
 });
 
-// New Calculation API Endpoint
-app.post('/calculate', (req, res) => {
-  const { calculationType, params } = req.body;
+// New Structured Quote Endpoint (Code-Based)
+app.post('/structured-quote', (req, res) => {
+  const { deckLengthM, deckWidthM, deckHeightMM, stumpSize, bearerSize, joistSize, deckingBoardSize, joistSpacingMM = 450 } = req.body;
 
-  if (!calculationType || !params) {
-    return res.status(400).json({ error: 'Missing calculationType or params.' });
-  }
-
-  const calcFunction = calculations[calculationType];
-
-  if (typeof calcFunction !== 'function') {
-    return res.status(400).json({ error: `Invalid calculation type: ${calculationType}` });
+  if (!deckLengthM || !deckWidthM || !deckHeightMM || !stumpSize || !bearerSize || !joistSize || !deckingBoardSize) {
+    return res.status(400).json({ error: 'Missing required deck specification fields.' });
   }
 
   try {
-    const result = calcFunction(...Object.values(params));
-    res.json({ result, details: `Calculation ${calculationType} completed.` });
+    const standardLengths = [1.8, 2.4, 3.0, 3.6, 4.2, 4.8, 5.4, 6.0];
+
+    const results = [];
+
+    // 1. Stumps
+    const stumpLengthRequiredM = (deckHeightMM + 600) / 1000; // Assuming 600mm in-ground minimum
+    const optimalStumpLength = standardLengths.find(l => l >= stumpLengthRequiredM) || 2.4;
+    const stumpsNeeded = 9; // Basic grid assumption; could be calculated based on spans
+    results.push({
+      material: `${stumpSize} H4 Pine Stumps`,
+      orderAmount: `${Math.ceil(stumpsNeeded * stumpLengthRequiredM / optimalStumpLength)} lengths @ ${optimalStumpLength}m`,
+    });
+
+    // 2. Bearers
+    const bearersNeeded = 3;
+    const bearerLength = standardLengths.find(l => l >= deckWidthM) || 3.0;
+    results.push({
+      material: `${bearerSize} H3 Treated Pine Bearers`,
+      orderAmount: `${bearersNeeded} lengths @ ${bearerLength}m`,
+    });
+
+    // 3. Joists
+    const joistsNeeded = Math.ceil(deckWidthM * 1000 / joistSpacingMM) + 1;
+    const joistLength = standardLengths.find(l => l >= deckLengthM) || 4.2;
+    results.push({
+      material: `${joistSize} H3 Treated Pine Joists`,
+      orderAmount: `${joistsNeeded} lengths @ ${joistLength}m`,
+    });
+
+    // 4. Decking Boards
+    const boardWidthMM = parseInt(deckingBoardSize.split('x')[0]);
+    const gapMM = 3;
+    const boardsNeeded = calculations.deckingBoardCount(deckWidthM * 1000, boardWidthMM, gapMM);
+    const deckBoardLength = standardLengths.find(l => l >= deckLengthM) || 4.2;
+    results.push({
+      material: `${deckingBoardSize} Merbau Decking Boards`,
+      orderAmount: `${boardsNeeded} lengths @ ${deckBoardLength}m`,
+    });
+
+    res.json({
+      structuredMaterials: results,
+      note: "Quantities optimized for standard lengths and minimal waste. Prices not included."
+    });
   } catch (error) {
-    console.error('Calculation Error:', error);
-    res.status(500).json({ error: 'Kai encountered an error while calculating.' });
+    console.error('Structured Quote Error:', error);
+    res.status(500).json({ error: 'Kai encountered an error while generating the structured quote.' });
   }
 });
 
