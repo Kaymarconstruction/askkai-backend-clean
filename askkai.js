@@ -14,7 +14,7 @@ const openai = new OpenAIApi(new Configuration({
 app.use(cors());
 app.use(express.json());
 
-// Chat Endpoint (GPT) - Enhanced Prompt
+// Chat Endpoint with Enhanced Prompt
 app.post('/chat', async (req, res) => {
   const { messages } = req.body;
 
@@ -25,15 +25,14 @@ app.post('/chat', async (req, res) => {
   const systemPrompt = {
     role: 'system',
     content: `
-      You are Kai, an experienced builder and carpenter. 
-      Provide clear, structured advice using dot-point material lists.
-      When discussing material orders:
+      You are Kai, an experienced builder and carpenter.
+      Provide clear, structured material order lists using dot points.
       - Optimize for standard timber lengths to minimize waste.
       - Default to Class A soil if soil type is not specified.
-      - Assume embedment depths based on the user's Australian region (600mm for VIC and NSW, 450mm for QLD).
-      - Always output the exact number of standard lengths required.
-      - Do not suggest multiple length options; recommend only the most suitable length.
-      Be concise, professional, and friendly. Avoid long-winded explanations unless asked.
+      - Assume embedment depths based on Australian region (600mm VIC/NSW, 450mm QLD).
+      - Always recommend the correct standard length, no multiple options.
+      - Calculate and include waste factors (usually 10%).
+      Be concise and avoid long explanations unless asked.
     `
   };
 
@@ -55,9 +54,10 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// Structured Quote Endpoint (Code-Based Logic)
+// Unified Structured Quote Endpoint
 app.post('/structured-quote', (req, res) => {
   const {
+    projectType,
     deckLengthM,
     deckWidthM,
     deckHeightMM,
@@ -66,66 +66,121 @@ app.post('/structured-quote', (req, res) => {
     joistSize,
     deckingBoardSize,
     joistSpacingMM = 450,
-    region = 'VIC', // Default region
-    soilClass = 'A' // Default soil class if not specified
+    wallLengthM,
+    wallHeightM,
+    blockSize = '390x190x190',
+    claddingType,
+    boardWidthMM = 180,
+    roofWidthM,
+    roofLengthM,
+    colorbondCoverageMM = 760,
+    region = 'VIC',
+    soilClass = 'A'
   } = req.body;
 
-  if (!deckLengthM || !deckWidthM || !deckHeightMM || !stumpSize || !bearerSize || !joistSize || !deckingBoardSize) {
-    return res.status(400).json({ error: 'Missing required deck specification fields.' });
-  }
+  const standardLengths = [1.8, 2.4, 3.0, 3.6, 4.2, 4.8, 5.4, 6.0];
+  const results = [];
+  const embedmentDepths = { VIC: 600, NSW: 600, QLD: 450 };
+  const embedmentMM = embedmentDepths[region] || 600;
 
   try {
-    const standardLengths = [1.8, 2.4, 3.0, 3.6, 4.2, 4.8, 5.4, 6.0];
-    const results = [];
+    if (projectType === 'deck') {
+      // Stump Calculations
+      const stumpTotalLengthMM = deckHeightMM + embedmentMM;
+      const stumpLengthM = stumpTotalLengthMM / 1000;
+      const optimalStumpLength = standardLengths.find(l => l >= stumpLengthM) || 2.4;
+      const stumpsNeeded = 9;
+      const stumpsPerLength = Math.floor(optimalStumpLength / stumpLengthM);
+      const stumpLengthsRequired = Math.ceil(stumpsNeeded / stumpsPerLength);
 
-    // Regional Embedment Depths (future configurable)
-    const embedmentDepths = { VIC: 600, NSW: 600, QLD: 450 };
-    const embedmentMM = embedmentDepths[region] || 600;
+      results.push({
+        material: `${stumpSize} H4 Pine Stumps`,
+        orderAmount: `${stumpLengthsRequired} lengths @ ${optimalStumpLength}m (Cut ${stumpsPerLength} per length)`
+      });
 
-    // 1. Stumps Calculation
-    const stumpTotalLengthMM = deckHeightMM + embedmentMM;
-    const stumpLengthM = stumpTotalLengthMM / 1000;
-    const optimalStumpLength = standardLengths.find(l => l >= stumpLengthM) || 2.4;
+      // Bearers
+      const bearerLength = standardLengths.find(l => l >= deckWidthM) || 3.0;
+      const bearersNeeded = 3;
+      results.push({
+        material: `${bearerSize} H3 Treated Pine Bearers`,
+        orderAmount: `${bearersNeeded} lengths @ ${bearerLength}m`
+      });
 
-    const stumpsNeeded = 9; // Default grid assumption; could be made dynamic later
-    const stumpsPerLength = Math.floor(optimalStumpLength / stumpLengthM);
-    const stumpLengthsRequired = Math.ceil(stumpsNeeded / stumpsPerLength);
+      // Joists
+      const joistsNeeded = Math.ceil(deckWidthM * 1000 / joistSpacingMM) + 1;
+      const joistLength = standardLengths.find(l => l >= deckLengthM) || 4.2;
+      results.push({
+        material: `${joistSize} H3 Treated Pine Joists`,
+        orderAmount: `${joistsNeeded} lengths @ ${joistLength}m`
+      });
 
-    results.push({
-      material: `${stumpSize} H4 Pine Stumps`,
-      orderAmount: `${stumpLengthsRequired} lengths @ ${optimalStumpLength}m (Cut ${stumpsPerLength} per length)`
-    });
+      // Decking Boards
+      const boardWidth = parseInt(deckingBoardSize.split('x')[0]);
+      const gapMM = 3;
+      const boardsNeeded = calculations.deckingBoardCount(deckWidthM * 1000, boardWidth, gapMM);
+      const deckBoardLength = standardLengths.find(l => l >= deckLengthM) || 4.2;
+      results.push({
+        material: `${deckingBoardSize} Merbau Decking Boards`,
+        orderAmount: `${boardsNeeded} lengths @ ${deckBoardLength}m`
+      });
+    }
 
-    // 2. Bearers
-    const bearerLength = standardLengths.find(l => l >= deckWidthM) || 3.0;
-    const bearersNeeded = 3;
-    results.push({
-      material: `${bearerSize} H3 Treated Pine Bearers`,
-      orderAmount: `${bearersNeeded} lengths @ ${bearerLength}m`
-    });
+    if (projectType === 'brickWall') {
+      // Block Wall Calculation
+      const [blockLengthMM, blockHeightMM] = blockSize.split('x').map(Number);
+      const wallAreaM2 = wallLengthM * wallHeightM;
+      const blockFaceAreaM2 = (blockLengthMM * blockHeightMM) / 1_000_000;
+      const blocksNeeded = Math.ceil((wallAreaM2 / blockFaceAreaM2) * 1.1); // 10% waste
 
-    // 3. Joists
-    const joistsNeeded = Math.ceil(deckWidthM * 1000 / joistSpacingMM) + 1;
-    const joistLength = standardLengths.find(l => l >= deckLengthM) || 4.2;
-    results.push({
-      material: `${joistSize} H3 Treated Pine Joists`,
-      orderAmount: `${joistsNeeded} lengths @ ${joistLength}m`
-    });
+      results.push({
+        material: `Concrete Blocks (${blockSize})`,
+        orderAmount: `${blocksNeeded} blocks`
+      });
 
-    // 4. Decking Boards
-    const boardWidthMM = parseInt(deckingBoardSize.split('x')[0]);
-    const gapMM = 3;
-    const boardsNeeded = calculations.deckingBoardCount(deckWidthM * 1000, boardWidthMM, gapMM);
+      const mortarVolumeM3 = (blocksNeeded * 0.0005).toFixed(2);
+      results.push({
+        material: `Mortar`,
+        orderAmount: `${mortarVolumeM3} m³`
+      });
 
-    const deckBoardLength = standardLengths.find(l => l >= deckLengthM) || 4.2;
-    results.push({
-      material: `${deckingBoardSize} Merbau Decking Boards`,
-      orderAmount: `${boardsNeeded} lengths @ ${deckBoardLength}m`
-    });
+      results.push({
+        material: `Reinforcement Bars (12mm)`,
+        orderAmount: `Spacing every 600mm vertically and horizontally as per structural standards`
+      });
+    }
+
+    if (projectType === 'cladding') {
+      // Weatherboard Cladding
+      const wallPerimeterM = wallLengthM * 4; // Assuming rectangle
+      const wallAreaM2 = wallPerimeterM * wallHeightM;
+      const boardCoverageM = boardWidthMM / 1000;
+      const boardsNeeded = Math.ceil((wallAreaM2 / boardCoverageM) * 1.1); // 10% waste
+
+      results.push({
+        material: `${claddingType} Weatherboards (${boardWidthMM}mm)`,
+        orderAmount: `${boardsNeeded} boards`
+      });
+    }
+
+    if (projectType === 'roof') {
+      // Colorbond Roofing
+      const totalRoofWidthMM = roofWidthM * 1000;
+      const sheetsNeeded = Math.ceil(totalRoofWidthMM / colorbondCoverageMM);
+      results.push({
+        material: `Colorbond Roofing Sheets`,
+        orderAmount: `${sheetsNeeded} sheets`
+      });
+
+      const flashingLengthM = (roofWidthM * 2 + roofLengthM * 2) * 1.1;
+      results.push({
+        material: `Flashing (100x100mm)`,
+        orderAmount: `${Math.ceil(flashingLengthM)} meters`
+      });
+    }
 
     res.json({
       structuredMaterials: results,
-      note: `Optimized for standard lengths and minimal waste. Region: ${region}, Soil Class: ${soilClass}, Embedment depth: ${embedmentMM}mm.`
+      note: `Optimized for ${projectType}. Region: ${region}, Soil Class: ${soilClass}, Embedment Depth: ${embedmentMM}mm.`
     });
   } catch (error) {
     console.error('Structured Quote Error:', error);
