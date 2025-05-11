@@ -7,6 +7,14 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// Environment Variable Validation
+['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].forEach((key) => {
+  if (!process.env[key]) {
+    console.error(`❌ Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+});
+
 const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY
 }));
@@ -17,7 +25,7 @@ app.use(cors());
 app.use(express.json());
 
 // Constants
-const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE) || 10;
+const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
 const DEFAULT_BAG_VOLUME = 0.01; // m³ per 20kg bag
 
 // Helpers
@@ -139,5 +147,5 @@ app.post('/calculate-footings', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Ask Kai backend running on port ${PORT}`);
+  console.log(`✅ Ask Kai backend running on port ${PORT}`);
 });
