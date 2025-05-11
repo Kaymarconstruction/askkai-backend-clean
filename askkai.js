@@ -1,67 +1,77 @@
-const user = sessionStorage.getItem('askkaiUser');
-if (!user) window.location.href = 'signin.html';
-const isMark = user === 'mark@kaymarconstruction.com';
-let promptCount = parseInt(localStorage.getItem('promptCount') || '0');
-const MAX_FREE_PROMPTS = 10;
-const messages = [];
+const express = require('express');
+const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
+const { Configuration, OpenAIApi } = require('openai');
+require('dotenv').config(); 
 
-function toggleMenu() {
-  document.getElementById('menuDropdown').classList.toggle('hidden');
-}
+const app = express();
+const PORT = process.env.PORT || 10000;
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY })); 
 
-function logoutUser() {
-  sessionStorage.clear();
-  localStorage.removeItem('promptCount');
-  localStorage.removeItem('kaiTokens');
-  window.location.href = 'logout.html';
-}
+app.use(cors());
+app.use(express.json()); 
 
-document.getElementById('submitBtn').addEventListener('click', async () => {
-  const askInput = document.getElementById('askInput');
-  const kaiReply = document.getElementById('kaiReply');
-  const userQuestion = askInput.value.trim();
-  if (!userQuestion) return;
+app.post('/quote', async (req, res) => {
+  const { messages } = req.body; 
 
-  if (!isMark && promptCount >= MAX_FREE_PROMPTS) {
-    alert("You’ve hit your free limit. Time to upgrade.");
-    window.location.href = 'upgrade.html';
-    return;
-  }
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Invalid message format.' });
+  } 
 
-  messages.push({ role: "user", content: userQuestion });
+  const systemPrompt = {
+    role: 'system',
+    content: 'You are Kai, a senior estimator and builder. Generate a material list only. Use dot-points.'
+  }; 
 
-  const qaContainer = document.createElement('div');
-  qaContainer.className = 'mb-6';
+  const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages]; 
 
-  const userText = document.createElement('p');
-  userText.className = 'text-right text-blue-700 font-semibold mb-2';
-  userText.textContent = `You: ${userQuestion}`;
-  qaContainer.appendChild(userText);
+  try {
+    const aiResponse = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: fullMessages,
+      max_tokens: 1000,
+      temperature: 0.6
+    }); 
 
-  const kaiText = document.createElement('p');
-  kaiText.className = 'text-left text-green-600 font-semibold whitespace-pre-wrap';
-  const cursor = document.createElement('span');
-  cursor.className = 'blinking-cursor';
-  kaiText.textContent = "Kai is thinking...";
-  kaiText.appendChild(cursor);
-  qaContainer.appendChild(kaiText);
+    const materialList = aiResponse.data.choices[0].message.content.trim(); 
 
-  kaiReply.appendChild(qaContainer);
-  kaiReply.scrollTop = kaiReply.scrollHeight;
-  askInput.value = "";
+    const materials = materialList
+      .split('\n')
+      .filter(line => line.startsWith('-'))
+      .map(line => line.replace('-', '').split(':')[0].trim()); 
 
-  try {
-    const response = await fetch('https://askkai-backend-clean.onrender.com/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages })
-    });
+    const prices = {}; 
 
-    const data = await response.json();
-    const finalText = data.reply || "Kai’s stumped. Try again shortly.";
-    kaiText.textContent = finalText;
-  } catch (error) {
-    console.error('Fetch error:', error);
-    kaiText.textContent = "Kai had an error. Please try again.";
-  }
-});
+    for (const material of materials) {
+      // Clean material name by removing anything in parentheses
+      const cleanedMaterial = material.replace(/.*?/g, '').trim(); 
+
+      const { data, error } = await supabase
+        .from('materials')
+        .select('name, price_per_unit, unit')
+        .ilike('name', `%${cleanedMaterial}%`)
+        .limit(1)
+        .single(); 
+
+      if (data) {
+        prices[material] = `${data.price_per_unit} per ${data.unit}`;
+      } else {
+        prices[material] = 'Price Not Found';
+      }
+    } 
+
+    const enrichedQuote = materialList.replace(/^-\s*(.*?):/gm, (match, p1) => {
+      return `- ${p1}: (${prices[p1] || 'Price Not Found'})`;
+    }); 
+
+    res.json({ reply: enrichedQuote });
+  } catch (error) {
+    console.error('Quote Generation Error:', error);
+    res.status(500).json({ reply: 'Kai had an error, please try again shortly.' });
+  }
+}); 
+
+app.listen(PORT, () => {
+  console.log(`Ask Kai backend running on port ${PORT}`);
+})
