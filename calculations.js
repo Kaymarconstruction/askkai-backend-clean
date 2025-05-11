@@ -1,130 +1,146 @@
 module.exports = {
-  deckingBoardCount(deckLengthMM, boardWidthMM, gapMM) {
-    return Math.ceil(deckLengthMM / (boardWidthMM + gapMM));
+  // Masonry Calculations
+  brickQuantity(wallAreaM2, brickLengthM, brickHeightM) {
+    const brickFaceArea = brickLengthM * brickHeightM;
+    return Math.ceil((wallAreaM2 / brickFaceArea) * 1.1);
   },
 
-  studCount(wallLengthMM, studSpacingMM) {
-    return Math.ceil(wallLengthMM / studSpacingMM) + 1;
+  mortarVolume(brickCount, mortarVolumePerBrickM3 = 0.0005) {
+    return (brickCount * mortarVolumePerBrickM3).toFixed(3);
   },
 
-  sheathingPanelCount(wallAreaM2, panelAreaM2) {
-    return Math.ceil(wallAreaM2 / panelAreaM2);
+  wallTies(wallAreaM2) {
+    return Math.ceil(wallAreaM2 * 2.5);
   },
 
-  floorJoistCount(floorLengthMM, joistSpacingMM) {
-    return Math.ceil(floorLengthMM / joistSpacingMM) + 1;
+  // Plumbing Calculations
+  pipeLength(buildingPerimeterM, verticalRunsM) {
+    return Math.ceil((buildingPerimeterM + verticalRunsM) * 1.1);
   },
 
-  stairTreadCount(totalRiseMM, riserHeightMM) {
-    const risers = Math.ceil(totalRiseMM / riserHeightMM);
-    return { risers, treads: risers - 1 };
+  waterTankSize(dailyUsagePerPersonL, numPeople, storageDays) {
+    return dailyUsagePerPersonL * numPeople * storageDays;
   },
 
-  rafterLength(runMM, riseMM) {
-    return Math.round(Math.sqrt(runMM ** 2 + riseMM ** 2));
+  waterFlowRateGravity(headHeightM) {
+    return (0.278 * Math.sqrt(headHeightM)).toFixed(2);
   },
 
-  trimLength(perimeterM) {
-    return Math.ceil(perimeterM * 1.1);
+  // Electrical Calculations
+  conduitLength(routeLengthM) {
+    return Math.ceil(routeLengthM * 1.1);
   },
 
-  subfloorAdhesive(subfloorAreaM2, coveragePerTubeM2) {
-    return Math.ceil(subfloorAreaM2 / coveragePerTubeM2);
+  cableCurrent(loadW, voltageV) {
+    return (loadW / voltageV).toFixed(2);
   },
 
-  fastenerCount(panels, fastenersPerPanel) {
-    return Math.ceil(panels * fastenersPerPanel);
+  lightingPoints(roomAreaM2, lightCoverageM2) {
+    return Math.ceil(roomAreaM2 / lightCoverageM2);
   },
 
-  beamDepthEstimate(clearSpanM) {
-    return (clearSpanM / 0.5).toFixed(2); // cm
+  powerSockets(roomAreaM2) {
+    return Math.ceil(roomAreaM2 / 4);
   },
 
-  roofSheathingCount(roofAreaM2, panelAreaM2) {
-    return Math.ceil((roofAreaM2 / panelAreaM2) * 1.05);
-  },
-
-  framingNailCount(studs, nailsPerConnection) {
-    return Math.ceil(studs * nailsPerConnection);
-  },
-
-  insulationRolls(wallAreaM2, coveragePerRollM2) {
-    return Math.ceil(wallAreaM2 / coveragePerRollM2);
-  },
-
-  boardFeetToCubicMeters(thicknessMM, widthMM, lengthM) {
-    return (thicknessMM * widthMM * lengthM / 1_000_000).toFixed(3);
-  },
-
-  drywallSheetCount(areaM2, sheetAreaM2) {
+  // Plasterboard Calculations
+  plasterboardSheets(areaM2, sheetAreaM2) {
     return Math.ceil((areaM2 / sheetAreaM2) * 1.1);
   },
 
-  concreteFormworkPanels(perimeterM, heightM, panelAreaM2) {
-    return Math.ceil((perimeterM * heightM) / panelAreaM2);
+  jointCompound(areaM2) {
+    return (areaM2 * 0.5).toFixed(2);
   },
 
-  railingPostCount(deckPerimeterM, maxSpacingM) {
-    return Math.ceil(deckPerimeterM / maxSpacingM) + 1;
+  plasterboardScrews(sheetCount) {
+    return sheetCount * 50;
   },
 
-  sidingBoardCount(wallAreaM2, effectiveCoverageM2) {
-    return Math.ceil((wallAreaM2 / effectiveCoverageM2) * 1.1);
+  // Concreting Calculations
+  slabRebarCount(widthM, spacingM) {
+    return Math.ceil(widthM / spacingM);
   },
 
-  paintQuantity(surfaceAreaM2, coveragePerLitreM2) {
-    return Math.ceil((surfaceAreaM2 / coveragePerLitreM2) * 1.1);
+  concreteVolume(lengthM, widthM, depthM) {
+    return (lengthM * widthM * depthM).toFixed(2);
   },
 
-  weatherboardQuantity(wallAreaM2, boardWidthM, overlapM) {
-    const effectiveCoverage = boardWidthM - overlapM;
-    const boardsPerM2 = 1 / effectiveCoverage;
-    return Math.ceil(wallAreaM2 * boardsPerM2 * 1.1);
+  rebarLapLength(diameterMM) {
+    return diameterMM * 40;
   },
 
-  totalWeatherboardLength(wallAreaM2, effectiveCoverageM) {
-    return Math.ceil(wallAreaM2 / effectiveCoverageM);
+  // Carpentry Calculations
+  roofRafterCount(roofLengthM, spacingM) {
+    return Math.ceil(roofLengthM / spacingM) + 1;
   },
 
-  weatherboardFasteners(boardCount, fastenersPerBoard) {
-    return Math.ceil(boardCount * fastenersPerBoard);
+  timberVolume(lengthM, widthM, thicknessM, quantity = 1) {
+    return (lengthM * widthM * thicknessM * quantity).toFixed(3);
   },
 
-  verticalWeatherboardCount(wallAreaM2, boardWidthM, gapM) {
-    const effectiveCoverage = boardWidthM + gapM;
-    const boardsPerM2 = 1 / effectiveCoverage;
-    return Math.ceil(wallAreaM2 * boardsPerM2);
+  formworkPanelCount(areaM2, panelAreaM2) {
+    return Math.ceil(areaM2 / panelAreaM2);
   },
 
-  demolitionDebrisVolume(timberVolumeM3, expansionFactor = 1.4) {
-    return (timberVolumeM3 * expansionFactor).toFixed(2);
+  doorHingeCount(doorHeightM, numDoors) {
+    return doorHeightM > 2.1 ? numDoors * 4 : numDoors * 3;
   },
 
-  skipBinSize(debrisVolumeM3, skipVolumeM3) {
+  plywoodForFlooring(floorAreaM2, sheetAreaM2) {
+    return Math.ceil((floorAreaM2 / sheetAreaM2) * 1.1);
+  },
+
+  skirtingLength(roomPerimeterM) {
+    return Math.ceil(roomPerimeterM * 1.1);
+  },
+
+  handrailPostCount(handrailLengthM, maxSpacingM) {
+    return Math.ceil(handrailLengthM / maxSpacingM) + 1;
+  },
+
+  beamDeflection(spanMM) {
+    return (spanMM / 360).toFixed(2);
+  },
+
+  partitionStudCount(wallLengthMM, studSpacingMM) {
+    return Math.ceil(wallLengthMM / studSpacingMM) + 1;
+  },
+
+  architraveLength(doorHeightM, doorWidthM) {
+    return Math.ceil((2 * doorHeightM + doorWidthM) * 1.1);
+  },
+
+  lintelLength(openingWidthM) {
+    return openingWidthM + 0.6; // 300mm each side
+  },
+
+  // Roofing Calculations
+  roofAreaGable(widthM, slopeLengthM) {
+    return widthM * slopeLengthM * 2;
+  },
+
+  roofTileCount(roofAreaM2, tileCoverageM2) {
+    return Math.ceil((roofAreaM2 / tileCoverageM2) * 1.1);
+  },
+
+  // Demolition & Waste Calculations
+  demolitionDebrisVolume(wallAreaM2, wallThicknessM) {
+    return (wallAreaM2 * wallThicknessM).toFixed(2);
+  },
+
+  skipBinTrips(debrisVolumeM3, skipVolumeM3) {
     return Math.ceil(debrisVolumeM3 / skipVolumeM3);
   },
 
-  fastenerRemovalTime(fastenerCount, timePerFastenerMin) {
-    return (fastenerCount * timePerFastenerMin / 60).toFixed(2); // Hours
+  demolitionManHours(volumeM3, productivityM3PerHour) {
+    return (volumeM3 / productivityM3PerHour).toFixed(2);
   },
 
-  manualDemolitionLabor(demoVolumeM3, productivityRateM3PerHour) {
-    return (demoVolumeM3 / productivityRateM3PerHour).toFixed(2); // Hours
+  excavationVolume(lengthM, widthM, depthM) {
+    return (lengthM * widthM * depthM).toFixed(2);
   },
 
-  demolitionCostEstimate(demoVolumeM3, costPerM3) {
-    return (demoVolumeM3 * costPerM3).toFixed(2);
-  },
-
-  plasterboardDemolition(wallAreaM2, sheetAreaM2) {
-    return Math.ceil(wallAreaM2 / sheetAreaM2);
-  },
-
-  floorboardRemovalTime(floorAreaM2, productivityRateM2PerHour) {
-    return (floorAreaM2 / productivityRateM2PerHour).toFixed(2); // Hours
-  },
-
-  offcutWasteCalculation(totalMaterialLengthM, wasteFactor = 1.1) {
-    return Math.ceil(totalMaterialLengthM * wasteFactor);
+  paintCoverage(areaM2, coveragePerLitreM2) {
+    return Math.ceil((areaM2 / coveragePerLitreM2) * 1.1);
   }
 };
