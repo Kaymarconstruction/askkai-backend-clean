@@ -14,25 +14,21 @@ const openai = new OpenAIApi(new Configuration({
 app.use(cors());
 app.use(express.json());
 
-// Chat Endpoint with Enhanced Prompt
+// Chat Endpoint (Enhanced Prompt)
 app.post('/chat', async (req, res) => {
   const { messages } = req.body;
-
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Invalid message format.' });
-  }
+  if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Invalid message format.' });
 
   const systemPrompt = {
     role: 'system',
     content: `
-      You are Kai, an experienced builder and carpenter.
-      Provide clear, structured material order lists using dot points.
-      - Optimize for standard timber lengths to minimize waste.
-      - Default to Class A soil if soil type is not specified.
-      - Assume embedment depths based on Australian region (600mm VIC/NSW, 450mm QLD).
-      - Always recommend the correct standard length, no multiple options.
-      - Calculate and include waste factors (usually 10%).
-      Be concise and avoid long explanations unless asked.
+      You are Kai, a senior construction estimator.
+      Always provide clear, dot-point material order lists.
+      - Optimize for standard material lengths to minimize waste.
+      - Default to Class A soil if not specified.
+      - Apply waste factors (usually 10%).
+      - When calculating roofing, include pitch effects and correct flashing lengths.
+      Be concise and professional. Avoid lengthy explanations unless requested.
     `
   };
 
@@ -54,10 +50,13 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// Unified Structured Quote Endpoint
+// Structured Quote Endpoint
 app.post('/structured-quote', (req, res) => {
   const {
     projectType,
+    wallLengthM,
+    wallHeightM,
+    brickSize = '390x190x190',
     deckLengthM,
     deckWidthM,
     deckHeightMM,
@@ -66,13 +65,9 @@ app.post('/structured-quote', (req, res) => {
     joistSize,
     deckingBoardSize,
     joistSpacingMM = 450,
-    wallLengthM,
-    wallHeightM,
-    blockSize = '390x190x190',
-    claddingType,
-    boardWidthMM = 180,
     roofWidthM,
     roofLengthM,
+    pitchDeg = 0,
     colorbondCoverageMM = 760,
     region = 'VIC',
     soilClass = 'A'
@@ -84,8 +79,33 @@ app.post('/structured-quote', (req, res) => {
   const embedmentMM = embedmentDepths[region] || 600;
 
   try {
+    if (projectType === 'brickWall') {
+      const [brickLengthMM, brickHeightMM] = brickSize.split('x').map(Number);
+      const wallAreaM2 = wallLengthM * wallHeightM;
+      const brickCount = calculations.brickQuantity(wallAreaM2, brickLengthMM / 1000, brickHeightMM / 1000);
+      const mortarVolume = calculations.mortarVolume(brickCount);
+
+      results.push({ material: `Concrete Bricks (${brickSize})`, orderAmount: `${brickCount} bricks` });
+      results.push({ material: `Mortar`, orderAmount: `${mortarVolume} m³` });
+      results.push({ material: `Wall Ties`, orderAmount: `${calculations.wallTies(wallAreaM2)} ties` });
+    }
+
+    if (projectType === 'roof') {
+      const pitchRadians = pitchDeg * (Math.PI / 180);
+      const slopeLengthM = roofWidthM / (2 * Math.cos(pitchRadians)); // Adjust for pitch
+      const roofAreaM2 = roofLengthM * slopeLengthM * 2; // Gable roof assumption
+
+      const sheetsNeeded = Math.ceil((roofAreaM2 / (colorbondCoverageMM / 1000)) * 1.1);
+      results.push({
+        material: `Colorbond Roofing Sheets`,
+        orderAmount: `${sheetsNeeded} sheets at standard length ${roofLengthM}m`
+      });
+
+      const flashingLengthM = (roofWidthM * 2 + roofLengthM * 2) * 1.1;
+      results.push({ material: `Flashing`, orderAmount: `${Math.ceil(flashingLengthM)} meters` });
+    }
+
     if (projectType === 'deck') {
-      // Stump Calculations
       const stumpTotalLengthMM = deckHeightMM + embedmentMM;
       const stumpLengthM = stumpTotalLengthMM / 1000;
       const optimalStumpLength = standardLengths.find(l => l >= stumpLengthM) || 2.4;
@@ -98,7 +118,6 @@ app.post('/structured-quote', (req, res) => {
         orderAmount: `${stumpLengthsRequired} lengths @ ${optimalStumpLength}m (Cut ${stumpsPerLength} per length)`
       });
 
-      // Bearers
       const bearerLength = standardLengths.find(l => l >= deckWidthM) || 3.0;
       const bearersNeeded = 3;
       results.push({
@@ -106,7 +125,6 @@ app.post('/structured-quote', (req, res) => {
         orderAmount: `${bearersNeeded} lengths @ ${bearerLength}m`
       });
 
-      // Joists
       const joistsNeeded = Math.ceil(deckWidthM * 1000 / joistSpacingMM) + 1;
       const joistLength = standardLengths.find(l => l >= deckLengthM) || 4.2;
       results.push({
@@ -114,67 +132,14 @@ app.post('/structured-quote', (req, res) => {
         orderAmount: `${joistsNeeded} lengths @ ${joistLength}m`
       });
 
-      // Decking Boards
       const boardWidth = parseInt(deckingBoardSize.split('x')[0]);
       const gapMM = 3;
       const boardsNeeded = calculations.deckingBoardCount(deckWidthM * 1000, boardWidth, gapMM);
       const deckBoardLength = standardLengths.find(l => l >= deckLengthM) || 4.2;
+
       results.push({
         material: `${deckingBoardSize} Merbau Decking Boards`,
         orderAmount: `${boardsNeeded} lengths @ ${deckBoardLength}m`
-      });
-    }
-
-    if (projectType === 'brickWall') {
-      // Block Wall Calculation
-      const [blockLengthMM, blockHeightMM] = blockSize.split('x').map(Number);
-      const wallAreaM2 = wallLengthM * wallHeightM;
-      const blockFaceAreaM2 = (blockLengthMM * blockHeightMM) / 1_000_000;
-      const blocksNeeded = Math.ceil((wallAreaM2 / blockFaceAreaM2) * 1.1); // 10% waste
-
-      results.push({
-        material: `Concrete Blocks (${blockSize})`,
-        orderAmount: `${blocksNeeded} blocks`
-      });
-
-      const mortarVolumeM3 = (blocksNeeded * 0.0005).toFixed(2);
-      results.push({
-        material: `Mortar`,
-        orderAmount: `${mortarVolumeM3} m³`
-      });
-
-      results.push({
-        material: `Reinforcement Bars (12mm)`,
-        orderAmount: `Spacing every 600mm vertically and horizontally as per structural standards`
-      });
-    }
-
-    if (projectType === 'cladding') {
-      // Weatherboard Cladding
-      const wallPerimeterM = wallLengthM * 4; // Assuming rectangle
-      const wallAreaM2 = wallPerimeterM * wallHeightM;
-      const boardCoverageM = boardWidthMM / 1000;
-      const boardsNeeded = Math.ceil((wallAreaM2 / boardCoverageM) * 1.1); // 10% waste
-
-      results.push({
-        material: `${claddingType} Weatherboards (${boardWidthMM}mm)`,
-        orderAmount: `${boardsNeeded} boards`
-      });
-    }
-
-    if (projectType === 'roof') {
-      // Colorbond Roofing
-      const totalRoofWidthMM = roofWidthM * 1000;
-      const sheetsNeeded = Math.ceil(totalRoofWidthMM / colorbondCoverageMM);
-      results.push({
-        material: `Colorbond Roofing Sheets`,
-        orderAmount: `${sheetsNeeded} sheets`
-      });
-
-      const flashingLengthM = (roofWidthM * 2 + roofLengthM * 2) * 1.1;
-      results.push({
-        material: `Flashing (100x100mm)`,
-        orderAmount: `${Math.ceil(flashingLengthM)} meters`
       });
     }
 
@@ -182,6 +147,7 @@ app.post('/structured-quote', (req, res) => {
       structuredMaterials: results,
       note: `Optimized for ${projectType}. Region: ${region}, Soil Class: ${soilClass}, Embedment Depth: ${embedmentMM}mm.`
     });
+
   } catch (error) {
     console.error('Structured Quote Error:', error);
     res.status(500).json({ error: 'Kai encountered an error while generating the structured quote.' });
