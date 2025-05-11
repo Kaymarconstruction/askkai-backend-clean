@@ -16,6 +16,7 @@ app.post('/quote', async (req, res) => {
   const { messages } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
+    console.error('Invalid message format received:', req.body);
     return res.status(400).json({ error: 'Invalid message format.' });
   }
 
@@ -27,12 +28,16 @@ app.post('/quote', async (req, res) => {
   const fullMessages = messages.some(m => m.role === 'system') ? messages : [systemPrompt, ...messages];
 
   try {
+    console.log('Received messages:', JSON.stringify(fullMessages, null, 2));
+
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
       messages: fullMessages,
       max_tokens: 1000,
       temperature: 0.6
     });
+
+    console.log('AI Response:', JSON.stringify(aiResponse.data, null, 2));
 
     const materialList = aiResponse.data.choices[0].message.content.trim();
 
@@ -44,12 +49,20 @@ app.post('/quote', async (req, res) => {
     const prices = {};
 
     for (const material of materials) {
-      const { data } = await supabase
+      console.log(`Querying Supabase for material: ${material}`);
+
+      const { data, error } = await supabase
         .from('materials')
         .select('name, price_per_unit, unit')
         .ilike('name', `%${material}%`)
         .limit(1)
         .single();
+
+      if (error) {
+        console.error(`Supabase error for material ${material}:`, error);
+      }
+
+      console.log('Supabase Data:', data);
 
       prices[material] = data ? `${data.price_per_unit} per ${data.unit}` : 'Price Not Found';
     }
@@ -70,4 +83,3 @@ app.post('/quote', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Ask Kai backend running on port ${PORT}`);
 });
-
