@@ -7,7 +7,6 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Environment Variable Validation
 ['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].forEach((key) => {
   if (!process.env[key]) {
     console.error(`❌ Missing required environment variable: ${key}`);
@@ -24,19 +23,31 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 app.use(cors());
 app.use(express.json());
 
-// Constants
 const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
 const DEFAULT_BAG_VOLUME = 0.01; // m³ per 20kg bag
 
 // Helpers
 async function getUser(email) {
   if (!email) throw new Error('User email is required.');
-  const { data, error } = await supabase
+
+  let { data, error } = await supabase
     .from('users')
     .select('*')
     .eq('email', email)
     .single();
-  if (error || !data) throw new Error('User not found.');
+
+  if (error || !data) {
+    // Auto-create user if not found
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert({ email, plan_tier: 'Free', prompt_count: 0 })
+      .select()
+      .single();
+
+    if (insertError) throw new Error('Failed to create new user.');
+    return newUser;
+  }
+
   return data;
 }
 
