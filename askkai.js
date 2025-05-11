@@ -18,13 +18,15 @@ const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY
 }));
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 app.use(cors());
 app.use(express.json());
 
 const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
-const DEFAULT_BAG_VOLUME = 0.01; // m³ per 20kg bag
 
 // Helpers
 async function getUser(email) {
@@ -73,23 +75,26 @@ app.post('/chat', async (req, res) => {
 
   try {
     const user = await getUser(userEmail);
+
     if (user.plan_tier === 'Free' && user.prompt_count >= PROMPT_LIMIT_FREE) {
-      return res.json({ reply: 'You’ve hit your free prompt limit, mate! Time for an upgrade.' });
+      return res.json({ reply: "You’ve hit your free prompt limit, mate! Time for an upgrade." });
     }
 
     const systemPrompt = {
       role: 'system',
       content: `
-        You are Kai, a seasoned Aussie tradie and construction estimator with over 20 years of experience. 
-        - Start with "G'day" ONLY if this is the first message. 
-        - Avoid repetitive greetings after that.
-        - Always apply AS1684 and AS2870 building codes.
-        - Provide specific material quantities and sizes, using dot-point lists.
-        - For posts, suggest hole diameters (3x post width), embedment depth (600mm VIC/NSW, 450mm QLD), and concrete volumes.
-        - If a user provides dimensions, calculate needed materials (posts, beams, rafters, roof sheets).
-        - Be cheeky but clear, and keep responses under 100 words unless a material list is required.
-        - If you’re unsure, state assumptions before calculating. 
-        - Use VIC defaults unless a region is specified.
+You are Kai, a licensed Australian builder and qualified carpenter with over 20 years of hands-on experience. You provide expert, code-compliant construction advice.
+
+- Follow AS1684 (Timber Framing Code) and AS2870 (Residential Slabs and Footings).
+- Think like a foreman: concise, no fluff, straight to the point.
+- Provide exact material quantities, sizes, spans, and fastener types. 
+- For decking, pergolas, and roofing, specify post sizes, bearer spans, joist spacing, rafter sizing, and roofing materials.
+- Default to VIC standards unless specified otherwise.
+- Clarify missing info before calculating estimates.
+- Don’t assume footing sizes unless structural advice is needed. Prioritize framing, spans, and load considerations first.
+- Include material grades (e.g., MGP10, F17 LVL), screw types, and batten spacings.
+- Respond in a professional, confident tone. You are a site supervisor, not an apprentice.
+- Avoid repetitive greetings. Use "G'day" only on first message if appropriate.
       `
     };
 
@@ -100,12 +105,12 @@ app.post('/chat', async (req, res) => {
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
       messages: fullMessages,
-      max_tokens: 1200,
-      temperature: 0.7
+      max_tokens: 1500,
+      temperature: 0.4
     });
 
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
-      'Kai’s stumped. Give it another go, mate.';
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() 
+      || 'Kai’s stumped. Give it another go, mate.';
 
     const updatedCount = await updatePromptCount(userEmail);
 
@@ -127,35 +132,6 @@ app.get('/suppliers', async (req, res) => {
     console.error('Supplier Fetch Error:', err);
     res.status(500).json({ error: 'Could not fetch suppliers.' });
   }
-});
-
-// Concrete & Footing Calculator
-app.post('/calculate-footings', (req, res) => {
-  const { postSizeMM, postCount, region = 'VIC', bagVolumeM3 = DEFAULT_BAG_VOLUME } = req.body;
-
-  if (!postSizeMM || !postCount) {
-    return res.status(400).json({ error: 'Post size and count required.' });
-  }
-
-  const embedmentDepths = { VIC: 600, QLD: 450 };
-  const regionKey = region.toUpperCase();
-  const embedmentMM = embedmentDepths[regionKey] || 600;
-
-  const holeDiameterMM = postSizeMM * 3;
-  const holeRadiusM = (holeDiameterMM / 1000) / 2;
-  const depthM = embedmentMM / 1000;
-
-  const volumePerHoleM3 = Math.PI * Math.pow(holeRadiusM, 2) * depthM;
-  const totalVolumeM3 = volumePerHoleM3 * postCount;
-  const concreteBags = Math.ceil(totalVolumeM3 / bagVolumeM3);
-
-  res.json({
-    holeDiameterMM,
-    embedmentDepthMM: embedmentMM,
-    volumePerHoleM3: parseFloat(volumePerHoleM3.toFixed(3)),
-    totalVolumeM3: parseFloat(totalVolumeM3.toFixed(3)),
-    concreteBags
-  });
 });
 
 app.listen(PORT, () => {
