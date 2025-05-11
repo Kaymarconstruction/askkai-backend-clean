@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Configuration, OpenAIApi } = require('openai');
+const calculations = require('./calculations'); // Import the new calculations module
 require('dotenv').config();
 
 const app = express();
@@ -72,6 +73,29 @@ app.post('/quote', async (req, res) => {
   } catch (error) {
     console.error('Quote Generation Error:', error);
     res.status(500).json({ reply: 'Kai had an error, please try again shortly.' });
+  }
+});
+
+// New Calculation API Endpoint
+app.post('/calculate', (req, res) => {
+  const { calculationType, params } = req.body;
+
+  if (!calculationType || !params) {
+    return res.status(400).json({ error: 'Missing calculationType or params.' });
+  }
+
+  const calcFunction = calculations[calculationType];
+
+  if (typeof calcFunction !== 'function') {
+    return res.status(400).json({ error: `Invalid calculation type: ${calculationType}` });
+  }
+
+  try {
+    const result = calcFunction(...Object.values(params));
+    res.json({ result, details: `Calculation ${calculationType} completed.` });
+  } catch (error) {
+    console.error('Calculation Error:', error);
+    res.status(500).json({ error: 'Kai encountered an error while calculating.' });
   }
 });
 
