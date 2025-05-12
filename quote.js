@@ -24,15 +24,12 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 app.use(cors());
 app.use(express.json());
 
-// Fetch Materials (For Decking, Pergola, etc.)
+// Fetch Materials (Decking, Pergola, etc.)
 app.get('/materials', async (req, res) => {
   try {
     const { category } = req.query;
-    let query = supabase.from('materials').select('*');
-
-    if (category) query = query.eq('category', category);
-
-    const { data, error } = await query;
+    const query = supabase.from('materials').select('*');
+    const { data, error } = category ? await query.eq('category', category) : await query;
 
     if (error) throw error;
     res.json({ materials: data });
@@ -42,10 +39,9 @@ app.get('/materials', async (req, res) => {
   }
 });
 
-// Placeholder for Calculations API (Future)
+// Calculations API (Placeholder)
 app.post('/calculations', async (req, res) => {
   const { projectType, inputs } = req.body;
-
   if (!projectType || !inputs) {
     return res.status(400).json({ error: 'Project Type and Inputs required.' });
   }
@@ -61,15 +57,14 @@ app.post('/calculations', async (req, res) => {
       return res.status(404).json({ error: 'No calculation formula found for this project type.' });
     }
 
-    // Placeholder: You will implement real formula parsing/execution later
-    res.json({ result: 'Calculation logic will be added here.' });
+    res.json({ result: 'Calculation logic will be implemented in future updates.' });
   } catch (error) {
     console.error('Calculation Error:', error);
     res.status(500).json({ error: 'Calculation processing failed.' });
   }
 });
 
-// Main Quote Generator Endpoint
+// Quote Generator Endpoint
 app.post('/generate-quote', async (req, res) => {
   const { messages } = req.body;
 
@@ -84,18 +79,17 @@ app.post('/generate-quote', async (req, res) => {
 You are Kai Marlow, a master estimator and material take-off expert from Frankston, VIC, Australia, working for Kaymar Construction.
 
 - Output ONLY a clean, dot-point materials list.
-- No introductions, comments, or explanations.
+- No introductions or explanations.
 - Example:
   - 10x Treated Pine Posts 90x90 H4 (3.0m lengths)
   - 24x MGP10 Beams 190x45 (4.2m lengths)
   - 50x Colorbond Roofing Sheets (Custom Orb, Surfmist, 2.4m lengths)
-
-- Specify clear quantities, sizes, and lengths.
+- Specify quantities, sizes, and lengths clearly.
 - Assume VIC standards unless region specified.
 - Do not calculate prices or mention suppliers unless asked.
-- Do not say "Materials:" or similar headers.
+- Do not use headings like "Materials:".
 - Keep responses under 200 words, dot-points only.
-      `,
+      `
     };
 
     const finalMessages = messages.some(m => m.role === 'system')
