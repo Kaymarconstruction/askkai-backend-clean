@@ -7,7 +7,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 11000;
 
-// Validate Environment Variables
+// Validate Required Environment Variables
 ['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].forEach((key) => {
   if (!process.env[key]) {
     console.error(`❌ Missing environment variable: ${key}`);
@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 11000;
   }
 });
 
-// API Clients
+// Initialize API Clients
 const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 }));
@@ -24,12 +24,15 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 app.use(cors());
 app.use(express.json());
 
-// Fetch Materials (Decking, Pergola, etc.)
+// Fetch Materials by Category
 app.get('/materials', async (req, res) => {
   try {
     const { category } = req.query;
-    const query = supabase.from('materials').select('*');
-    const { data, error } = category ? await query.eq('category', category) : await query;
+    let query = supabase.from('materials').select('material_name, size').order('material_name');
+
+    if (category) query = query.eq('category', category);
+
+    const { data, error } = await query;
 
     if (error) throw error;
     res.json({ materials: data });
@@ -39,32 +42,7 @@ app.get('/materials', async (req, res) => {
   }
 });
 
-// Calculations API (Placeholder)
-app.post('/calculations', async (req, res) => {
-  const { projectType, inputs } = req.body;
-  if (!projectType || !inputs) {
-    return res.status(400).json({ error: 'Project Type and Inputs required.' });
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('calculations')
-      .select('formula')
-      .eq('project_type', projectType)
-      .single();
-
-    if (error || !data) {
-      return res.status(404).json({ error: 'No calculation formula found for this project type.' });
-    }
-
-    res.json({ result: 'Calculation logic will be implemented in future updates.' });
-  } catch (error) {
-    console.error('Calculation Error:', error);
-    res.status(500).json({ error: 'Calculation processing failed.' });
-  }
-});
-
-// Quote Generator Endpoint
+// Generate Quote
 app.post('/generate-quote', async (req, res) => {
   const { messages } = req.body;
 
@@ -76,19 +54,18 @@ app.post('/generate-quote', async (req, res) => {
     const systemPrompt = {
       role: 'system',
       content: `
-You are Kai Marlow, a master estimator and material take-off expert from Frankston, VIC, Australia, working for Kaymar Construction.
+You are Kai Marlow, a master estimator and material take-off expert from Frankston, VIC, Australia.
 
 - Output ONLY a clean, dot-point materials list.
-- No introductions or explanations.
 - Example:
   - 10x Treated Pine Posts 90x90 H4 (3.0m lengths)
   - 24x MGP10 Beams 190x45 (4.2m lengths)
   - 50x Colorbond Roofing Sheets (Custom Orb, Surfmist, 2.4m lengths)
-- Specify quantities, sizes, and lengths clearly.
+
+- Specify clear quantities, sizes, and lengths.
 - Assume VIC standards unless region specified.
-- Do not calculate prices or mention suppliers unless asked.
-- Do not use headings like "Materials:".
-- Keep responses under 200 words, dot-points only.
+- Do not include prices or suppliers unless requested.
+- Keep responses under 200 words.
       `
     };
 
