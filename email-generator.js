@@ -1,96 +1,92 @@
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdm14cGtveW9pbWlibnRldGVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1MDgxODksImV4cCI6MjA2MjA';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let messages = [];
-const userId = sessionStorage.getItem('askkaiUserId'); 
+// OpenAI API Key is stored securely server-side, assumed handled by backend
 
-document.getElementById('submitEmail').addEventListener('click', () => handlePrompt());
+// Chat State
+let messages = [
+  {
+    role: "system",
+    content: "You are Kai Marlow, a seasoned Aussie tradie and master communicator. You help blokes write clear, professional, and friendly emails without the fluff. Keep it casual but respectful, suitable for clients, suppliers, or contractors. If the user asks for a draft, create it using Aussie spelling and construction lingo. Always keep it brief and to the point, but make sure it sounds polite and professional. If follow-up prompts are provided, adjust the draft accordingly until the user is happy. Provide the email body only, no subject lines unless asked specifically."
+  }
+];
 
-async function handlePrompt() {
-  const input = document.getElementById('emailInput').value.trim();
-  const emailBox = document.getElementById('emailBox');
-  if (!input) return;
+// Elements
+const emailInput = document.getElementById('emailInput');
+const emailBox = document.getElementById('emailBox');
+const submitEmail = document.getElementById('submitEmail');
+const sendEmailBtn = document.getElementById('sendEmailBtn');
+const recipientDropdown = document.getElementById('recipientDropdown');
 
-  messages.push({ role: 'user', content: input });
-  emailBox.innerHTML = `<span class="text-green-600 font-medium">Kai is working on it...</span>`;
+// Handle Prompt Submission
+submitEmail.addEventListener('click', async () => {
+  const userInput = emailInput.value.trim();
+  if (!userInput) return;
 
+  // Append User Message
+  messages.push({ role: "user", content: userInput });
+  
+  emailBox.innerHTML += `<div class="text-gray-800 mt-4"><strong>You:</strong> ${userInput}</div>`;
+  emailInput.value = '';
+
+  // Show Loading
+  emailBox.innerHTML += `<div class="text-green-600 font-medium mt-2">Kai is working on your draft...</div>`;
+
+  // API Call to OpenAI via your backend handler
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}` // Secure via backend if possible
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: "You are Kai Marlow, a seasoned Aussie tradie and master communicator. You help blokes write clear, professional, and friendly emails without the fluff. Keep it casual but respectful, suitable for clients, suppliers, or contractors. If the user asks for a draft, create it using Aussie spelling and construction lingo. Always keep it brief and to the point, but make sure it sounds polite and professional. If follow-up prompts are provided, adjust the draft accordingly until the user is happy. Provide the email body only, no subject lines unless asked specifically." },
-          ...messages
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      })
+    const response = await fetch("https://askkai-backend-clean.onrender.com/generate-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages })
     });
 
     const data = await response.json();
-    const draft = data.choices[0].message.content;
-    emailBox.textContent = draft;
+    const reply = data.reply || "Kai couldn’t generate an email. Try again.";
 
-    await saveDraftToSupabase(draft);
-    loadRecipients(); 
+    // Append Assistant Message
+    messages.push({ role: "assistant", content: reply });
+
+    // Update UI
+    emailBox.innerHTML += `<div class="text-gray-800 mt-4"><strong>Kai:</strong> ${reply}</div>`;
+    emailBox.scrollTop = emailBox.scrollHeight;
 
   } catch (error) {
-    console.error('Error generating email:', error);
-    emailBox.innerText = 'Kai hit a snag. Try again.';
+    console.error("Error generating email:", error);
+    emailBox.innerHTML += `<div class="text-red-600 mt-4">Error: Unable to generate email at this time.</div>`;
   }
-}
+});
 
-async function saveDraftToSupabase(draft) {
+// Send Email via mailto
+sendEmailBtn.addEventListener('click', () => {
+  const recipient = recipientDropdown.value;
+  if (!recipient) return alert('Please select a recipient.');
+
+  // Get Latest Draft from Assistant
+  const latestDraft = messages.reverse().find(msg => msg.role === "assistant")?.content;
+  if (!latestDraft) return alert('No draft generated yet.');
+
+  const subject = encodeURIComponent("Follow-up Regarding Our Project");
+  const body = encodeURIComponent(latestDraft);
+
+  window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+});
+
+// Placeholder: Load Recipients from Supabase (Saved Contacts)
+async function loadRecipients() {
+  const userId = sessionStorage.getItem('askkaiUserId');
   if (!userId) return;
 
-  const { error } = await supabase
-    .from('users')
-    .update({
-      saved_emails: supabase.literal(`COALESCE(saved_emails, '[]'::jsonb) || '${JSON.stringify([{ draft, timestamp: new Date() }])}'::jsonb`)
-    })
-    .eq('id', userId);
-
-  if (error) console.error('Failed to save draft:', error);
-}
-
-async function loadRecipients() {
-  const { data, error } = await supabase
-    .from('users')
-    .select('saved_contacts, saved_suppliers')
-    .eq('id', userId)
-    .single();
-
-  const dropdown = document.getElementById('recipientDropdown');
-  dropdown.innerHTML = '<option value="">Select Recipient</option>';
+  const { data, error } = await supabase.from('users').select('saved_contacts').eq('id', userId).single();
 
   if (data?.saved_contacts) {
     data.saved_contacts.forEach(contact => {
-      dropdown.innerHTML += `<option value="${contact.email}">${contact.name}</option>`;
-    });
-  }
-
-  if (data?.saved_suppliers) {
-    data.saved_suppliers.forEach(supplier => {
-      dropdown.innerHTML += `<option value="${supplier.email}">${supplier.name}</option>`;
+      const option = document.createElement('option');
+      option.value = contact.email;
+      option.textContent = `${contact.name} (${contact.email})`;
+      recipientDropdown.appendChild(option);
     });
   }
 }
 
-document.getElementById('sendEmailBtn').addEventListener('click', () => {
-  const recipientEmail = document.getElementById('recipientDropdown').value;
-  const draft = document.getElementById('emailBox').innerText;
-
-  if (!recipientEmail) return alert('Select a recipient.');
-  if (!draft) return alert('No email draft to send.');
-
-  const subject = encodeURIComponent('Regarding Our Recent Work');
-  const body = encodeURIComponent(`${draft}\n\nCheers,\n[Your Name]`);
-  
-  window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
-});
+window.onload = loadRecipients;
