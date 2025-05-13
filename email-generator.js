@@ -1,10 +1,11 @@
+// Configuration
 const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Replace securely in production.
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsImJlIjoiZWI6dm5kdm14cGtveW9pbWlibnRldGVmIiwiYcm9sZSI6ImFub24iLCJpYXQiOjE3NDY1MDgxODksImV4cCI6MjA2MjA4NDE4OX0.-U4Jfb33aFfoAec-fhhFqiHExezWckoEYwkSVqibjE4';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const BACKEND_URL = 'https://askkai-backend-clean.onrender.com';
 
-// Session Check (Aligned with working index.html logic)
+// Session Check
 const userEmail = sessionStorage.getItem('askkaiUser');
 if (!userEmail) window.location.href = 'signin.html';
 
@@ -75,7 +76,7 @@ async function loadRecipients() {
   const { data, error } = await supabase
     .from('users')
     .select(column)
-    .eq('email', userEmail) // Using email instead of userId
+    .eq('email', userEmail)
     .single();
 
   if (error) {
