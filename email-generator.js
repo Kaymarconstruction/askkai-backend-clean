@@ -1,10 +1,7 @@
 const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdm14cGtveW9pbWlibnRldGVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1MDgxODksImV4cCI6MjA2MjA';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// OpenAI API Key is stored securely server-side, assumed handled by backend
-
-// Chat State
 let messages = [
   {
     role: "system",
@@ -12,28 +9,22 @@ let messages = [
   }
 ];
 
-// Elements
 const emailInput = document.getElementById('emailInput');
 const emailBox = document.getElementById('emailBox');
 const submitEmail = document.getElementById('submitEmail');
 const sendEmailBtn = document.getElementById('sendEmailBtn');
 const recipientDropdown = document.getElementById('recipientDropdown');
 
-// Handle Prompt Submission
 submitEmail.addEventListener('click', async () => {
   const userInput = emailInput.value.trim();
   if (!userInput) return;
 
-  // Append User Message
   messages.push({ role: "user", content: userInput });
-  
+
   emailBox.innerHTML += `<div class="text-gray-800 mt-4"><strong>You:</strong> ${userInput}</div>`;
   emailInput.value = '';
-
-  // Show Loading
   emailBox.innerHTML += `<div class="text-green-600 font-medium mt-2">Kai is working on your draft...</div>`;
 
-  // API Call to OpenAI via your backend handler
   try {
     const response = await fetch("https://askkai-backend-clean.onrender.com/generate-email", {
       method: "POST",
@@ -44,10 +35,8 @@ submitEmail.addEventListener('click', async () => {
     const data = await response.json();
     const reply = data.reply || "Kai couldn’t generate an email. Try again.";
 
-    // Append Assistant Message
     messages.push({ role: "assistant", content: reply });
 
-    // Update UI
     emailBox.innerHTML += `<div class="text-gray-800 mt-4"><strong>Kai:</strong> ${reply}</div>`;
     emailBox.scrollTop = emailBox.scrollHeight;
 
@@ -57,13 +46,11 @@ submitEmail.addEventListener('click', async () => {
   }
 });
 
-// Send Email via mailto
 sendEmailBtn.addEventListener('click', () => {
   const recipient = recipientDropdown.value;
   if (!recipient) return alert('Please select a recipient.');
 
-  // Get Latest Draft from Assistant
-  const latestDraft = messages.reverse().find(msg => msg.role === "assistant")?.content;
+  const latestDraft = [...messages].reverse().find(msg => msg.role === "assistant")?.content;
   if (!latestDraft) return alert('No draft generated yet.');
 
   const subject = encodeURIComponent("Follow-up Regarding Our Project");
@@ -72,12 +59,15 @@ sendEmailBtn.addEventListener('click', () => {
   window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
 });
 
-// Placeholder: Load Recipients from Supabase (Saved Contacts)
 async function loadRecipients() {
   const userId = sessionStorage.getItem('askkaiUserId');
   if (!userId) return;
 
-  const { data, error } = await supabase.from('users').select('saved_contacts').eq('id', userId).single();
+  const { data, error } = await supabaseClient
+    .from('users')
+    .select('saved_contacts')
+    .eq('id', userId)
+    .single();
 
   if (data?.saved_contacts) {
     data.saved_contacts.forEach(contact => {
@@ -89,4 +79,5 @@ async function loadRecipients() {
   }
 }
 
-window.onload = loadRecipients;
+window.addEventListener('load', loadRecipients);
+
