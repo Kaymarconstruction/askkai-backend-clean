@@ -9,6 +9,8 @@ const BACKEND_URL = 'https://askkai-backend-clean.onrender.com';
 const userEmail = sessionStorage.getItem('askkaiUser');
 if (!userEmail) window.location.href = 'signin.html';
 
+const userName = userEmail.split('@')[0]; // Extract name from email before '@'
+
 // DOM Elements
 const emailInput = document.getElementById('emailInput');
 const chatHistory = document.getElementById('chatHistory');
@@ -49,9 +51,12 @@ submitPromptBtn.addEventListener('click', async () => {
     });
 
     const data = await response.json();
-    const reply = data.reply || "Kai couldn’t generate an email. Try again.";
-    messages.push({ role: "assistant", content: reply });
+    let reply = data.reply || "Kai couldn’t generate an email. Try again.";
 
+    // Append Regards with User Name
+    reply += `\n\nRegards,\n${capitalizeName(userName)}`;
+
+    messages.push({ role: "assistant", content: reply });
     updateLastKaiMessage(reply);
     finalDraft.innerText = reply;
     showFeedback('Draft generated successfully.', 'success');
@@ -63,6 +68,12 @@ submitPromptBtn.addEventListener('click', async () => {
     showLoading(false);
   }
 });
+
+// Utilities for Capitalizing Name
+function capitalizeName(name) {
+  if (!name) return 'User';
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
 
 // Load Recipients
 recipientType.addEventListener('change', loadRecipients);
