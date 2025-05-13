@@ -1,14 +1,12 @@
-// Configuration
 const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY'; // TODO: Replace securely in production.
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Replace securely in production.
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const BACKEND_URL = 'https://askkai-backend-clean.onrender.com';
 
-// User Session Check
-const userId = sessionStorage.getItem('askkaiUserId');
+// Session Check (Aligned with working index.html logic)
 const userEmail = sessionStorage.getItem('askkaiUser');
-if (!userId || !userEmail) window.location.href = 'signin.html';
+if (!userEmail) window.location.href = 'signin.html';
 
 // DOM Elements
 const emailInput = document.getElementById('emailInput');
@@ -20,18 +18,13 @@ const feedbackMessage = document.getElementById('feedbackMessage');
 const loadingIndicator = document.getElementById('loading');
 const submitPromptBtn = document.getElementById('submitPrompt');
 
-// Message State
 let messages = [{
   role: "system",
   content: `You are Kai Marlow, a seasoned Aussie tradie and master communicator. 
-You help blokes write clear, professional, and friendly emails without the fluff. 
-Keep it casual but respectful, suitable for clients, suppliers, or contractors. 
-If the user asks for a draft, create it using Aussie spelling and construction lingo. 
-Always keep it brief and to the point, but make sure it sounds polite and professional. 
-Provide the email body only, no subject lines unless asked specifically.`
+Help users write clear, professional, and friendly emails using Aussie spelling and casual but respectful tone. 
+Keep it brief and to the point. Provide the email body only, no subject lines unless asked.`
 }];
 
-// Input Event Listener
 emailInput.addEventListener('input', () => {
   submitPromptBtn.disabled = emailInput.value.trim() === '';
 });
@@ -82,7 +75,7 @@ async function loadRecipients() {
   const { data, error } = await supabase
     .from('users')
     .select(column)
-    .eq('id', userId)
+    .eq('email', userEmail) // Using email instead of userId
     .single();
 
   if (error) {
@@ -100,7 +93,6 @@ async function loadRecipients() {
   }
 }
 
-// Send Email
 document.getElementById('sendEmailBtn').addEventListener('click', () => {
   const recipient = recipientDropdown.value;
   const draft = finalDraft.innerText;
@@ -113,7 +105,6 @@ document.getElementById('sendEmailBtn').addEventListener('click', () => {
   window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
 });
 
-// Save Draft
 document.getElementById('saveDraftBtn').addEventListener('click', async () => {
   const draft = finalDraft.innerText;
   if (!draft) return showFeedback('No draft to save.', 'error');
@@ -122,7 +113,7 @@ document.getElementById('saveDraftBtn').addEventListener('click', async () => {
     const { data: currentUser, error: userError } = await supabase
       .from('users')
       .select('saved_emails')
-      .eq('id', userId)
+      .eq('email', userEmail)
       .single();
 
     if (userError) throw new Error('Error retrieving user data.');
@@ -133,7 +124,7 @@ document.getElementById('saveDraftBtn').addEventListener('click', async () => {
     const { error } = await supabase
       .from('users')
       .update({ saved_emails: updatedDrafts })
-      .eq('id', userId);
+      .eq('email', userEmail);
 
     if (error) throw new Error('Error saving draft.');
     showFeedback('Draft saved successfully.', 'success');
