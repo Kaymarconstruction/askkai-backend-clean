@@ -1,23 +1,16 @@
+// Configuration
 const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Replace with actual anon public key securely or via env variables if served through backend
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY'; // TODO: Replace securely in production.
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const BACKEND_URL = 'https://askkai-backend-clean.onrender.com';
 
+// User Session Check
 const userId = sessionStorage.getItem('askkaiUserId');
-if (!userId) window.location.href = 'signin.html';
+const userEmail = sessionStorage.getItem('askkaiUser');
+if (!userId || !userEmail) window.location.href = 'signin.html';
 
-let messages = [{
-  role: "system",
-  content: `You are Kai Marlow, a seasoned Aussie tradie and master communicator. 
-You help blokes write clear, professional, and friendly emails without the fluff. 
-Keep it casual but respectful, suitable for clients, suppliers, or contractors. 
-If the user asks for a draft, create it using Aussie spelling and construction lingo. 
-Always keep it brief and to the point, but make sure it sounds polite and professional. 
-If follow-up prompts are provided, adjust the draft accordingly until the user is happy. 
-Provide the email body only, no subject lines unless asked specifically.`
-}];
-
+// DOM Elements
 const emailInput = document.getElementById('emailInput');
 const chatHistory = document.getElementById('chatHistory');
 const finalDraft = document.getElementById('finalDraft');
@@ -25,43 +18,59 @@ const recipientType = document.getElementById('recipientType');
 const recipientDropdown = document.getElementById('recipientDropdown');
 const feedbackMessage = document.getElementById('feedbackMessage');
 const loadingIndicator = document.getElementById('loading');
+const submitPromptBtn = document.getElementById('submitPrompt');
 
-document.getElementById('submitPrompt').addEventListener('click', async () => {
+// Message State
+let messages = [{
+  role: "system",
+  content: `You are Kai Marlow, a seasoned Aussie tradie and master communicator. 
+You help blokes write clear, professional, and friendly emails without the fluff. 
+Keep it casual but respectful, suitable for clients, suppliers, or contractors. 
+If the user asks for a draft, create it using Aussie spelling and construction lingo. 
+Always keep it brief and to the point, but make sure it sounds polite and professional. 
+Provide the email body only, no subject lines unless asked specifically.`
+}];
+
+// Input Event Listener
+emailInput.addEventListener('input', () => {
+  submitPromptBtn.disabled = emailInput.value.trim() === '';
+});
+
+submitPromptBtn.addEventListener('click', async () => {
   const userInput = emailInput.value.trim();
   if (!userInput) return;
 
   showLoading(true);
   messages.push({ role: "user", content: userInput });
 
-  chatHistory.innerHTML += `<div><strong>You:</strong> ${userInput}</div>`;
+  appendChatMessage('You', userInput);
   emailInput.value = '';
-  chatHistory.innerHTML += `<div><strong>Kai:</strong> Crafting your draft...</div>`;
-  chatHistory.scrollTop = chatHistory.scrollHeight;
+  appendChatMessage('Kai', 'Crafting your draft...');
 
   try {
     const response = await fetch(`${BACKEND_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, userEmail: userId })
+      body: JSON.stringify({ messages, userEmail })
     });
 
     const data = await response.json();
     const reply = data.reply || "Kai couldn’t generate an email. Try again.";
-
     messages.push({ role: "assistant", content: reply });
-    chatHistory.lastChild.innerHTML = `<strong>Kai:</strong> ${reply}`;
+
+    updateLastKaiMessage(reply);
     finalDraft.innerText = reply;
     showFeedback('Draft generated successfully.', 'success');
-
   } catch (error) {
-    console.error("Error generating email:", error);
-    chatHistory.innerHTML += `<div class="text-red-600 mt-4">Error: Unable to generate email at this time.</div>`;
+    console.error("Chat Error:", error);
+    updateLastKaiMessage("Kai ran into an issue. Please try again.");
     showFeedback('Failed to generate draft. Please try again.', 'error');
   } finally {
     showLoading(false);
   }
 });
 
+// Load Recipients
 recipientType.addEventListener('change', loadRecipients);
 
 async function loadRecipients() {
@@ -91,6 +100,7 @@ async function loadRecipients() {
   }
 }
 
+// Send Email
 document.getElementById('sendEmailBtn').addEventListener('click', () => {
   const recipient = recipientDropdown.value;
   const draft = finalDraft.innerText;
@@ -103,6 +113,7 @@ document.getElementById('sendEmailBtn').addEventListener('click', () => {
   window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
 });
 
+// Save Draft
 document.getElementById('saveDraftBtn').addEventListener('click', async () => {
   const draft = finalDraft.innerText;
   if (!draft) return showFeedback('No draft to save.', 'error');
@@ -133,6 +144,19 @@ document.getElementById('saveDraftBtn').addEventListener('click', async () => {
 });
 
 window.addEventListener('load', loadRecipients);
+
+// Utility Functions
+function appendChatMessage(sender, message) {
+  const msgHTML = `<div><strong>${sender}:</strong> ${message}</div>`;
+  chatHistory.innerHTML += msgHTML;
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+function updateLastKaiMessage(message) {
+  const kaiMessages = chatHistory.querySelectorAll('div');
+  const lastKaiMsg = kaiMessages[kaiMessages.length - 1];
+  if (lastKaiMsg) lastKaiMsg.innerHTML = `<strong>Kai:</strong> ${message}`;
+}
 
 function showFeedback(message, type) {
   feedbackMessage.classList.remove('hidden');
