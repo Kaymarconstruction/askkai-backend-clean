@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Secure this key in production
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Use your full key here
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userId = sessionStorage.getItem('askkaiUserId');
@@ -7,7 +7,13 @@ if (!userId) window.location.href = 'signin.html';
 
 let messages = [{
   role: "system",
-  content: "You are Kai Marlow, a seasoned Aussie tradie and master communicator. You help blokes write clear, professional, and friendly emails without the fluff. Keep it casual but respectful, suitable for clients, suppliers, or contractors. If the user asks for a draft, create it using Aussie spelling and construction lingo. Always keep it brief and to the point, but make sure it sounds polite and professional. If follow-up prompts are provided, adjust the draft accordingly until the user is happy. Provide the email body only, no subject lines unless asked specifically."
+  content: `You are Kai Marlow, a seasoned Aussie tradie and master communicator. 
+You help blokes write clear, professional, and friendly emails without the fluff. 
+Keep it casual but respectful, suitable for clients, suppliers, or contractors. 
+If the user asks for a draft, create it using Aussie spelling and construction lingo. 
+Always keep it brief and to the point, but make sure it sounds polite and professional. 
+If follow-up prompts are provided, adjust the draft accordingly until the user is happy. 
+Provide the email body only, no subject lines unless asked specifically.`
 }];
 
 const emailInput = document.getElementById('emailInput');
@@ -21,17 +27,16 @@ document.getElementById('submitPrompt').addEventListener('click', async () => {
   if (!userInput) return;
 
   messages.push({ role: "user", content: userInput });
-
   chatHistory.innerHTML += `<div><strong>You:</strong> ${userInput}</div>`;
   emailInput.value = '';
   chatHistory.innerHTML += `<div><strong>Kai:</strong> Crafting your draft...</div>`;
   chatHistory.scrollTop = chatHistory.scrollHeight;
 
   try {
-    const response = await fetch("https://askkai-backend-clean.onrender.com/generate-email", {
+    const response = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages })
+      body: JSON.stringify({ messages, userEmail: userId })
     });
 
     const data = await response.json();
@@ -106,14 +111,5 @@ document.getElementById('saveDraftBtn').addEventListener('click', async () => {
   if (error) return alert('Error saving draft.');
   alert('Draft saved successfully!');
 });
-
-function toggleMenu() {
-  document.getElementById('menuDropdown').classList.toggle('hidden');
-}
-
-function logoutUser() {
-  sessionStorage.clear();
-  window.location.href = 'signin.html';
-}
 
 window.addEventListener('load', loadRecipients);
