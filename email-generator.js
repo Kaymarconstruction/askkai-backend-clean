@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Shortened for security
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Secure this key in production
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userId = sessionStorage.getItem('askkaiUserId');
