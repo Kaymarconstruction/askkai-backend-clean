@@ -1,8 +1,8 @@
 const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Use your full key here
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+const SUPABASE_KEY = 'YOUR_FULL_ANON_KEY_HERE'; // Use your full anon key.
 const BACKEND_URL = 'https://askkai-backend-clean.onrender.com';
+
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userId = sessionStorage.getItem('askkaiUserId');
 if (!userId) window.location.href = 'signin.html';
@@ -24,14 +24,24 @@ const finalDraft = document.getElementById('finalDraft');
 const recipientType = document.getElementById('recipientType');
 const recipientDropdown = document.getElementById('recipientDropdown');
 
+function sanitizeInput(input) {
+  const div = document.createElement('div');
+  div.textContent = input;
+  return div.innerHTML;
+}
+
 document.getElementById('submitPrompt').addEventListener('click', async () => {
   const userInput = emailInput.value.trim();
   if (!userInput) return;
 
+  const safeInput = sanitizeInput(userInput);
   messages.push({ role: "user", content: userInput });
-  chatHistory.innerHTML += `<div><strong>You:</strong> ${userInput}</div>`;
+
+  chatHistory.innerHTML += `<div><strong>You:</strong> ${safeInput}</div>`;
   emailInput.value = '';
-  chatHistory.innerHTML += `<div><strong>Kai:</strong> Crafting your draft...</div>`;
+  const kaiPlaceholder = document.createElement('div');
+  kaiPlaceholder.innerHTML = `<strong>Kai:</strong> Crafting your draft...`;
+  chatHistory.appendChild(kaiPlaceholder);
   chatHistory.scrollTop = chatHistory.scrollHeight;
 
   try {
@@ -41,16 +51,18 @@ document.getElementById('submitPrompt').addEventListener('click', async () => {
       body: JSON.stringify({ messages, userEmail: userId })
     });
 
+    if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+
     const data = await response.json();
-    const reply = data.reply || "Kai couldn’t generate an email. Try again.";
+    const reply = sanitizeInput(data.reply || "Kai couldn’t generate an email. Try again.");
 
     messages.push({ role: "assistant", content: reply });
-    chatHistory.lastChild.innerHTML = `<strong>Kai:</strong> ${reply}`;
+    kaiPlaceholder.innerHTML = `<strong>Kai:</strong> ${reply}`;
     finalDraft.innerText = reply;
 
   } catch (error) {
     console.error("Error generating email:", error);
-    chatHistory.innerHTML += `<div class="text-red-600 mt-4">Error: Unable to generate email at this time.</div>`;
+    kaiPlaceholder.innerHTML = `<strong>Kai:</strong> Error: Unable to generate email at this time.`;
   }
 });
 
@@ -68,9 +80,12 @@ async function loadRecipients() {
     .eq('id', userId)
     .single();
 
-  if (error || !data || !data[column]) return;
+  if (error) {
+    console.error('Error loading recipients:', error);
+    return;
+  }
 
-  data[column].forEach(contact => {
+  (data?.[column] || []).forEach(contact => {
     const option = document.createElement('option');
     option.value = contact.email;
     option.textContent = `${contact.name} (${contact.email})`;
@@ -80,7 +95,7 @@ async function loadRecipients() {
 
 document.getElementById('sendEmailBtn').addEventListener('click', () => {
   const recipient = recipientDropdown.value;
-  const draft = finalDraft.innerText;
+  const draft = finalDraft.innerText.trim();
 
   if (!recipient) return alert('Please select a recipient.');
   if (!draft) return alert('No draft generated.');
@@ -91,7 +106,7 @@ document.getElementById('sendEmailBtn').addEventListener('click', () => {
 });
 
 document.getElementById('saveDraftBtn').addEventListener('click', async () => {
-  const draft = finalDraft.innerText;
+  const draft = finalDraft.innerText.trim();
   if (!draft) return alert('No draft to save.');
 
   const { data: currentUser, error: userError } = await supabase
@@ -100,9 +115,12 @@ document.getElementById('saveDraftBtn').addEventListener('click', async () => {
     .eq('id', userId)
     .single();
 
-  if (userError) return alert('Error retrieving user data.');
+  if (userError) {
+    console.error('Error retrieving user data:', userError);
+    return alert('Error retrieving user data.');
+  }
 
-  const updatedDrafts = currentUser.saved_emails || [];
+  const updatedDrafts = Array.isArray(currentUser?.saved_emails) ? currentUser.saved_emails : [];
   updatedDrafts.push({ draft, created_at: new Date().toISOString() });
 
   const { error } = await supabase
@@ -110,7 +128,11 @@ document.getElementById('saveDraftBtn').addEventListener('click', async () => {
     .update({ saved_emails: updatedDrafts })
     .eq('id', userId);
 
-  if (error) return alert('Error saving draft.');
+  if (error) {
+    console.error('Error saving draft:', error);
+    return alert('Error saving draft.');
+  }
+
   alert('Draft saved successfully!');
 });
 
