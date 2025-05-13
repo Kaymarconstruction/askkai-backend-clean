@@ -2,6 +2,8 @@ const SUPABASE_URL = 'https://ndvmxpkoyoimibntetef.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Use your full key here
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const BACKEND_URL = 'https://askkai-backend-clean.onrender.com';
+
 const userId = sessionStorage.getItem('askkaiUserId');
 if (!userId) window.location.href = 'signin.html';
 
@@ -33,7 +35,7 @@ document.getElementById('submitPrompt').addEventListener('click', async () => {
   chatHistory.scrollTop = chatHistory.scrollHeight;
 
   try {
-    const response = await fetch("/chat", {
+    const response = await fetch(`${BACKEND_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages, userEmail: userId })
