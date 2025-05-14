@@ -1,0 +1,14 @@
+[
+  {
+    "name": "John Smith",
+    "email": "john.smith@example.com",
+    "phone": "+61412345678",
+    "company": "Smith Carpentry"
+  },
+  {
+    "name": "Sarah Taylor",
+    "email": "sarah.taylor@example.com",
+    "phone": "+61498765432",
+    "company": "Taylor Builders"
+  }
+]
