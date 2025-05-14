@@ -1,1 +1,14 @@
-
+[
+  {
+    "name": "Bowens Timber",
+    "email": "sales@bowens.com.au",
+    "phone": "+61312345678",
+    "location": "Melbourne, VIC"
+  },
+  {
+    "name": "Bunnings Trade",
+    "email": "trade@bunnings.com.au",
+    "phone": "+61387654321",
+    "location": "Frankston, VIC"
+  }
+]
