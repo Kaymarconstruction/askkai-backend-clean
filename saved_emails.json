@@ -1,1 +1,14 @@
-
+[
+  {
+    "subject": "Project Completion Update",
+    "body": "Hi John,\n\nJust letting you know the decking project is complete. Let me know if you'd like to schedule a walk-through.\n\nRegards,\nMark",
+    "recipient": "john.smith@example.com",
+    "date": "2025-05-15"
+  },
+  {
+    "subject": "Quote for Pergola Build",
+    "body": "Hi Sarah,\n\nAttached is the quote for your pergola project. Let me know if you have any questions.\n\nRegards,\nMark",
+    "recipient": "sarah.taylor@example.com",
+    "date": "2025-05-16"
+  }
+]
