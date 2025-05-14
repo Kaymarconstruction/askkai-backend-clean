@@ -1,1 +1,23 @@
-
+[
+  {
+    "quote_id": "Q12345",
+    "project_name": "Merbau Decking - Frankston",
+    "materials": [
+      { "item": "Merbau 140mm", "quantity": 20, "unit_price": 15.50 },
+      { "item": "Concrete Bags 20kg", "quantity": 10, "unit_price": 8.95 }
+    ],
+    "labor_hours": 16,
+    "total_cost": 1500.00,
+    "date": "2025-05-15"
+  },
+  {
+    "quote_id": "Q12346",
+    "project_name": "Pergola Build - Mornington",
+    "materials": [
+      { "item": "H3 Pine 90x45", "quantity": 30, "unit_price": 12.75 }
+    ],
+    "labor_hours": 24,
+    "total_cost": 2500.00,
+    "date": "2025-05-16"
+  }
+]
