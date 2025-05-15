@@ -1,52 +1,47 @@
-# Node.js Dependencies
+# 🌐 Environment Config
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# 📦 Node Dependencies
 node_modules/
+
+# 📂 Logs & Runtime Data
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+*.pid
+*.seed
+*.pid.lock
 
-# Environment Variables
-.env
-.env.*
+# 🧹 Dependency Caching
+.pnpm-store/
+.npm/
+.yarn/
 
-# Logs
-logs/
-*.log
-
-# Build Outputs
-dist/
-build/
-tmp/
-temp/
-out/
-.cache/
-public/build/
-
-# Coverage Reports
-coverage/
-.nyc_output/
-
-# OS Generated Files
+# 🗃️ OS Generated Files
 .DS_Store
 Thumbs.db
 
-# IDE and Editor Configs
+# 📁 Build Output
+dist/
+build/
+
+# 🧪 Testing & Coverage
+coverage/
+*.lcov
+
+# 💅 IDE Configs
 .vscode/
 .idea/
-*.sublime-workspace
-*.sublime-project
 
-# Miscellaneous
-*.local
-*.swp
-*.bak
-*.old
+# 🚀 Deployment Artifacts
+*.tgz
 *.zip
 
-# Database Dumps (Optional)
-*.sql
-*.sqlite
-
-# API Keys / Secrets
-openai_api_key.txt
-supabase_api_key.txt
