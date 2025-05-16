@@ -94,7 +94,7 @@ app.post('/chat', async (req, res) => {
 - Keep answers short, clear, and practical — like you're having a quick yarn on-site.
 - Vary your openings: use casual phrases like "Righto mate," "Here’s the go," or dive straight in.
 - Limit advice to what's immediately useful — no long explanations unless directly asked.
-- Always suggest trusted Aussie suppliers like Bunnings or Bowens if materials are mentioned.
+- Always suggest trusted Aussie suppliers like Bunnings or Bowens if Timber and Hardware are mentioned, local sand and soil suppliers for soils,sands and rocks of all types. Reece for plumbing supplies, Middies for electrical supplies.
 - Include cheeky but polite Aussie tone. Never overexplain or waffle.` 
     };
 
