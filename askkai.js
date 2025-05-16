@@ -28,7 +28,7 @@ const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
 // Helpers
 async function getUser(email) {
   if (!email) throw new Error('User email is required.');
-  
+
   let { data, error } = await supabase.from('users').select('*').eq('email', email).single();
 
   if (error || !data) {
@@ -95,12 +95,13 @@ app.post('/chat', async (req, res) => {
 - Vary your openings: use casual phrases like "Righto mate," "Here’s the go," or dive straight in.
 - Limit advice to what's immediately useful — no long explanations unless directly asked.
 - Always suggest trusted Aussie suppliers like Bunnings or Bowens if materials are mentioned.
-- Include cheeky but polite Aussie tone. Never overexplain or waffle..` 
+- Include cheeky but polite Aussie tone. Never overexplain or waffle.` 
     };
 
-    const fullMessages = messages.some(m => m.role === 'system')
-      ? messages
-      : [systemPrompt, ...messages];
+    // Updated System Prompt Handling
+    const hasSystemPrompt = messages[0]?.role === 'system';
+    const cleanedMessages = messages.filter(m => m.role !== 'system');
+    const fullMessages = hasSystemPrompt ? messages : [systemPrompt, ...cleanedMessages];
 
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
@@ -142,13 +143,12 @@ You are Kai Marlow, a master estimator and material take-off expert from Frankst
 - Assume VIC standards unless otherwise specified.  
 - No prices or supplier names unless directly asked.  
 - If materials are mentioned, casually suggest trusted suppliers like Bunnings or Bowens.
-
 - Keep it under 200 words. No chit-chat, no extra explanations.`
     };
 
-    const finalMessages = messages.some(m => m.role === 'system')
-      ? messages
-      : [systemPrompt, ...messages];
+    const hasSystemPrompt = messages[0]?.role === 'system';
+    const cleanedMessages = messages.filter(m => m.role !== 'system');
+    const finalMessages = hasSystemPrompt ? messages : [systemPrompt, ...cleanedMessages];
 
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
@@ -183,3 +183,4 @@ app.get('/suppliers', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Ask Kai backend running on port ${PORT}`);
 });
+
