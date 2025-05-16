@@ -7,7 +7,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].forEach((key) => {
+['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_KEY'].forEach((key) => {
   if (!process.env[key]) {
     console.error(`❌ Missing required environment variable: ${key}`);
     process.exit(1);
@@ -18,9 +18,9 @@ const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 }));
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-app.use(cors());
+app.use(cors({ origin: 'https://ask.kaymarconstruction.com' }));
 app.use(express.json());
 
 const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
@@ -28,12 +28,16 @@ const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
 // Helpers
 async function getUser(email) {
   if (!email) throw new Error('User email is required.');
+  
   let { data, error } = await supabase.from('users').select('*').eq('email', email).single();
 
   if (error || !data) {
+    const plan_tier = (email === 'mark@kaymarconstruction.com') ? 'Pro' : 'Free';
+    const prompt_count = (plan_tier === 'Pro') ? Infinity : 0;
+
     const { data: newUser, error: insertError } = await supabase
       .from('users')
-      .insert({ email, plan_tier: 'Free', prompt_count: 0 })
+      .insert({ email, plan_tier, prompt_count })
       .select()
       .single();
 
@@ -41,11 +45,22 @@ async function getUser(email) {
     return newUser;
   }
 
+  // Auto-upgrade Mark to Pro if not already
+  if (email === 'mark@kaymarconstruction.com' && data.plan_tier !== 'Pro') {
+    await supabase.from('users')
+      .update({ plan_tier: 'Pro', prompt_count: Infinity })
+      .eq('email', email);
+    data.plan_tier = 'Pro';
+    data.prompt_count = Infinity;
+  }
+
   return data;
 }
 
 async function updatePromptCount(email) {
   const user = await getUser(email);
+  if (user.plan_tier === 'Pro') return user.prompt_count; // Unlimited for Pro users
+
   const newCount = (user.prompt_count || 0) + 1;
 
   const { error } = await supabase.from('users')
@@ -56,10 +71,12 @@ async function updatePromptCount(email) {
   return newCount;
 }
 
-// Chat Endpoint (General Tradie Advice)
+// Chat Endpoint
 app.post('/chat', async (req, res) => {
   const { messages, userEmail } = req.body;
+  console.log('Received Chat Request:', { userEmail, messages });
 
+  if (!userEmail) return res.status(400).json({ error: 'Missing userEmail.' });
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'No conversation history provided.' });
   }
@@ -70,7 +87,10 @@ app.post('/chat', async (req, res) => {
       return res.json({ reply: 'You’ve hit your free prompt limit, mate! Time for an upgrade.' });
     }
 
-    const systemPrompt = { role: 'system', content: `You are Kai Marlow, a seasoned carpenter and building consultant from Frankston, Victoria, Australia...` }; // [Shortened for brevity. Use full prompt as needed.]
+    const systemPrompt = { 
+      role: 'system', 
+      content: `You are Kai Marlow, a seasoned carpenter and building consultant from Frankston, Victoria, Australia. Answer all questions with practical, site-ready advice.` 
+    };
 
     const fullMessages = messages.some(m => m.role === 'system')
       ? messages
@@ -90,15 +110,14 @@ app.post('/chat', async (req, res) => {
     res.json({ reply, promptCount: updatedCount });
 
   } catch (error) {
-    console.error('Chat Error:', error);
+    console.error('Chat Endpoint Error:', error);
     res.status(500).json({ reply: 'Kai hit a snag. Try again shortly.' });
   }
 });
 
-// Quote Generator Endpoint (Take-Off Specialist)
+// Quote Generator Endpoint
 app.post('/generate-quote', async (req, res) => {
   const { messages } = req.body;
-
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'No project details provided.' });
   }
@@ -110,15 +129,12 @@ app.post('/generate-quote', async (req, res) => {
 You are Kai Marlow, a master estimator and material take-off expert from Frankston, VIC, Australia.
 
 - Output ONLY a clean, dot-point materials list.  
-- No intros, comments, or explanations.  
 - Example:  
   - 10x Treated Pine Posts 90x90 H4 (3.0m lengths)  
   - 24x MGP10 Beams 190x45 (4.2m lengths)  
-- Specify clear quantities, sizes, and lengths.  
 - Assume VIC standards unless otherwise specified.  
 - No prices or supplier names unless asked.  
-- Keep under 200 words.  
-      `
+- Keep under 200 words.`
     };
 
     const finalMessages = messages.some(m => m.role === 'system')
