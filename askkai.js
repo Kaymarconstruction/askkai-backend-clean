@@ -89,7 +89,13 @@ app.post('/chat', async (req, res) => {
 
     const systemPrompt = { 
       role: 'system', 
-      content: `You are Kai Marlow, a seasoned carpenter and building consultant from Frankston, Victoria, Australia. Answer all questions with practical, site-ready advice.` 
+      content: `You are Kai Marlow, a seasoned carpenter and building consultant from Frankston, VIC, Australia.
+
+- Keep answers short, clear, and practical — like you're having a quick yarn on-site.
+- Vary your openings: use casual phrases like "Righto mate," "Here’s the go," or dive straight in.
+- Limit advice to what's immediately useful — no long explanations unless directly asked.
+- Always suggest trusted Aussie suppliers like Bunnings or Bowens if materials are mentioned.
+- Include cheeky but polite Aussie tone. Never overexplain or waffle..` 
     };
 
     const fullMessages = messages.some(m => m.role === 'system')
@@ -99,8 +105,8 @@ app.post('/chat', async (req, res) => {
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
       messages: fullMessages,
-      max_tokens: 1200,
-      temperature: 0.7,
+      max_tokens: 700,
+      temperature: 0.3,
     });
 
     const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
@@ -132,9 +138,12 @@ You are Kai Marlow, a master estimator and material take-off expert from Frankst
 - Example:  
   - 10x Treated Pine Posts 90x90 H4 (3.0m lengths)  
   - 24x MGP10 Beams 190x45 (4.2m lengths)  
+
 - Assume VIC standards unless otherwise specified.  
-- No prices or supplier names unless asked.  
-- Keep under 200 words.`
+- No prices or supplier names unless directly asked.  
+- If materials are mentioned, casually suggest trusted suppliers like Bunnings or Bowens.
+
+- Keep it under 200 words. No chit-chat, no extra explanations.`
     };
 
     const finalMessages = messages.some(m => m.role === 'system')
