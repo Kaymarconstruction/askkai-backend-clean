@@ -7,7 +7,7 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_KEY'].forEach((key) => {
+['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'].forEach((key) => {
   if (!process.env[key]) {
     console.error(`❌ Missing required environment variable: ${key}`);
     process.exit(1);
@@ -18,24 +18,23 @@ const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 }));
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.use(helmet());
 app.use(cors({ origin: ['https://ask.kaymarconstruction.com'], credentials: true }));
 app.use(express.json());
 
 const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
+const MAX_TOKENS = parseInt(process.env.MAX_TOKENS, 10) || 700;
 
 // Helpers
 async function getUser(email) {
   if (!email) throw new Error('User email is required.');
-
   const { data, error } = await supabase.from('users').select('*').eq('email', email).single();
 
   if (error || !data) {
     const plan_tier = email === 'mark@kaymarconstruction.com' ? 'Pro' : 'Free';
     const prompt_count = plan_tier === 'Pro' ? null : 0;
-
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert([{ email, plan_tier, prompt_count, created_at: new Date().toISOString() }])
@@ -46,7 +45,7 @@ async function getUser(email) {
     return newUser;
   }
 
-  // Auto-upgrade for Mark
+  // Auto-upgrade Mark
   if (email === 'mark@kaymarconstruction.com' && data.plan_tier !== 'Pro') {
     await supabase.from('users')
       .update({ plan_tier: 'Pro', prompt_count: null })
@@ -63,22 +62,18 @@ async function updatePromptCount(email) {
   if (user.plan_tier === 'Pro') return user.prompt_count;
 
   const newCount = (user.prompt_count || 0) + 1;
-
-  const { error } = await supabase.from('users')
-    .update({ prompt_count: newCount })
-    .eq('email', email);
+  const { error } = await supabase.from('users').update({ prompt_count: newCount }).eq('email', email);
 
   if (error) throw new Error('Failed to update prompt count.');
   return newCount;
 }
 
-// OpenAI Chat Request with Retry
 async function chatWithOpenAI(messages, retries = 2) {
   try {
     return await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
       messages,
-      max_tokens: parseInt(process.env.MAX_TOKENS, 10) || 700,
+      max_tokens: MAX_TOKENS,
       temperature: 0.3,
     });
   } catch (err) {
@@ -125,7 +120,7 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// Quote Generator Endpoint
+// Quote Generator
 app.post('/generate-quote', async (req, res) => {
   const { messages } = req.body;
 
@@ -168,12 +163,6 @@ app.get('/suppliers', async (req, res) => {
     console.error('Suppliers Fetch Error:', err.message);
     return res.status(500).json({ error: 'Could not fetch suppliers.' });
   }
-});
-
-// Centralized Error Handler (optional if more routes are added)
-app.use((err, req, res, next) => {
-  console.error('Unhandled Error:', err.message);
-  res.status(500).json({ error: 'An unexpected error occurred.' });
 });
 
 app.listen(PORT, () => {
