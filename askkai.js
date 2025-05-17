@@ -19,7 +19,7 @@ const openai = new OpenAIApi(new Configuration({
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-app.use(cors({ origin: 'https://ask.kaymarconstruction.com' }));
+app.use(cors({ origin: ['https://ask.kaymarconstruction.com'], credentials: true }));
 app.use(express.json());
 
 const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
@@ -28,19 +28,19 @@ const PROMPT_LIMIT_FREE = parseInt(process.env.PROMPT_LIMIT_FREE, 10) || 10;
 async function getUser(email) {
   if (!email) throw new Error('User email is required.');
 
-  let { data, error } = await supabase.from('users').select('*').eq('email', email).single();
+  const { data, error } = await supabase.from('users').select('*').eq('email', email).single();
 
   if (error || !data) {
-    const plan_tier = (email === 'mark@kaymarconstruction.com') ? 'Pro' : 'Free';
-    const prompt_count = (plan_tier === 'Pro') ? Infinity : 0;
+    const plan_tier = email === 'mark@kaymarconstruction.com' ? 'Pro' : 'Free';
+    const prompt_count = plan_tier === 'Pro' ? Infinity : 0;
 
     const { data: newUser, error: insertError } = await supabase
       .from('users')
-      .insert({ email, plan_tier, prompt_count })
+      .insert([{ email, plan_tier, prompt_count, created_at: new Date().toISOString() }])
       .select()
       .single();
 
-    if (insertError) throw new Error('Failed to create new user.');
+    if (insertError) throw new Error(`Failed to create new user: ${insertError.message}`);
     return newUser;
   }
 
@@ -62,7 +62,8 @@ async function updatePromptCount(email) {
 
   const newCount = (user.prompt_count || 0) + 1;
 
-  const { error } = await supabase.from('users')
+  const { error } = await supabase
+    .from('users')
     .update({ prompt_count: newCount })
     .eq('email', email);
 
@@ -86,44 +87,41 @@ app.post('/chat', async (req, res) => {
       return res.json({ reply: 'You’ve hit your free prompt limit, mate! Time for an upgrade.' });
     }
 
-    const systemPrompt = { 
-      role: 'system', 
+    const systemPrompt = {
+      role: 'system',
       content: `You are Kai Marlow, a seasoned carpenter and building consultant from Frankston, VIC, Australia.
 
-- Keep answers short, clear, and practical — like you're having a quick yarn on-site.
-- Vary your openings: use casual phrases like "Righto mate," "Here’s the go," or dive straight in.
-- Limit advice to what's immediately useful — no long explanations unless directly asked.
-- Always suggest trusted Aussie suppliers like Bunnings or Bowens if Timber and Hardware are mentioned, local sand and soil suppliers for soils,sands and rocks of all types. Reece for plumbing supplies, Middies for electrical supplies.
-- Include cheeky but polite Aussie tone. Never overexplain or waffle.` 
+- Keep answers short, clear, and practical.
+- Use Aussie lingo like "Righto mate" or "Here’s the go".
+- Recommend suppliers: Bunnings, Bowens, Reece, Middies when relevant.
+- Keep it cheeky but helpful and avoid overexplaining.`,
     };
 
-    // Updated System Prompt Handling
-    const hasSystemPrompt = messages[0]?.role === 'system';
     const cleanedMessages = messages.filter(m => m.role !== 'system');
-    const fullMessages = hasSystemPrompt ? messages : [systemPrompt, ...cleanedMessages];
+    const finalMessages = [systemPrompt, ...cleanedMessages];
 
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
-      messages: fullMessages,
+      messages: finalMessages,
       max_tokens: 700,
       temperature: 0.3,
     });
 
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
-      'Kai’s stumped. Give it another go, mate.';
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 'Kai’s stumped. Try again, mate.';
 
     const updatedCount = await updatePromptCount(userEmail);
-    res.json({ reply, promptCount: updatedCount });
+    return res.json({ reply, promptCount: updatedCount });
 
   } catch (error) {
-    console.error('Chat Endpoint Error:', error);
-    res.status(500).json({ reply: 'Kai hit a snag. Try again shortly.' });
+    console.error('Chat Error:', error);
+    return res.status(500).json({ reply: 'Kai hit a snag. Try again shortly.' });
   }
 });
 
-// Quote Generator Endpoint
+// Quote Generator
 app.post('/generate-quote', async (req, res) => {
   const { messages } = req.body;
+
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'No project details provided.' });
   }
@@ -132,22 +130,18 @@ app.post('/generate-quote', async (req, res) => {
     const systemPrompt = {
       role: 'system',
       content: `
-You are Kai Marlow, a master estimator and material take-off expert from Frankston, VIC, Australia.
+You are Kai Marlow, an expert estimator.
 
-- Output ONLY a clean, dot-point materials list.  
-- Example:  
-  - 10x Treated Pine Posts 90x90 H4 (3.0m lengths)  
-  - 24x MGP10 Beams 190x45 (4.2m lengths)  
-
-- Assume VIC standards unless otherwise specified.  
-- No prices or supplier names unless directly asked.  
-- If materials are mentioned, casually suggest trusted suppliers like Bunnings or Bowens.
-- Keep it under 200 words. No chit-chat, no extra explanations.`
+- Output ONLY a clean dot-point materials list. 
+- Example:
+  - 10x Treated Pine Posts 90x90 H4 (3.0m)
+  - 24x MGP10 Beams 190x45 (4.2m)
+- Assume VIC standards. No prices unless asked. 
+- Keep it under 200 words. No chit-chat.`,
     };
 
-    const hasSystemPrompt = messages[0]?.role === 'system';
     const cleanedMessages = messages.filter(m => m.role !== 'system');
-    const finalMessages = hasSystemPrompt ? messages : [systemPrompt, ...cleanedMessages];
+    const finalMessages = [systemPrompt, ...cleanedMessages];
 
     const aiResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
@@ -156,30 +150,28 @@ You are Kai Marlow, a master estimator and material take-off expert from Frankst
       temperature: 0.3,
     });
 
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
-      '- Unable to generate quote. Try again.';
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 'Unable to generate quote. Try again.';
 
-    res.json({ reply });
+    return res.json({ reply });
 
   } catch (error) {
     console.error('Quote Generation Error:', error);
-    res.status(500).json({ reply: '- Kai hit a snag. Please try again.' });
+    return res.status(500).json({ reply: 'Kai hit a snag. Try again later.' });
   }
 });
 
-// Supplier Fetch Endpoint
+// Suppliers Fetch
 app.get('/suppliers', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('supplier').select('*');
+    const { data, error } = await supabase.from('suppliers').select('*');
     if (error) return res.status(500).json({ error: error.message });
-    res.json({ suppliers: data });
+    return res.json({ suppliers: data });
   } catch (err) {
     console.error('Supplier Fetch Error:', err);
-    res.status(500).json({ error: 'Could not fetch suppliers.' });
+    return res.status(500).json({ error: 'Could not fetch suppliers.' });
   }
 });
 
 app.listen(PORT, () => {
   console.log(`✅ Ask Kai backend running on port ${PORT}`);
 });
-
