@@ -5,18 +5,15 @@
   "main": "askkai.js",
   "scripts": {
     "start": "node askkai.js",
-    "scrape:bowens": "node -e \"require('./bowensScraper').scrapeBowens()\"",
-    "postinstall": "PUPPETEER_SKIP_DOWNLOAD=true && echo 'Skipping Chromium Download...'"
+    "postinstall": "echo 'Postinstall complete (Render environment)'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
-    "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "helmet": "^7.0.0",
     "openai": "^3.2.1",
-    "stripe": "^12.8.0",
-    "puppeteer-core": "^21.3.8"
+    "stripe": "^12.8.0"
   },
   "engines": {
     "node": ">=14"
