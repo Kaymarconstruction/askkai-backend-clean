@@ -7,7 +7,8 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'].forEach((key) => {
+// Corrected Environment Variable Check
+['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_KEY'].forEach((key) => {
   if (!process.env[key]) {
     console.error(`❌ Missing required environment variable: ${key}`);
     process.exit(1);
@@ -18,7 +19,8 @@ const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 }));
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+// Corrected Supabase Client Initialization
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 app.use(helmet());
 app.use(cors({ origin: ['https://ask.kaymarconstruction.com'], credentials: true }));
@@ -30,7 +32,6 @@ const MAX_TOKENS = parseInt(process.env.MAX_TOKENS, 10) || 700;
 // Helpers
 async function getUser(email) {
   if (!email) throw new Error('User email is required.');
-
   const { data, error } = await supabase.from('users').select('*').eq('email', email).single();
 
   if (error || !data) {
@@ -83,7 +84,7 @@ async function chatWithOpenAI(messages, retries = 2) {
   }
 }
 
-// Chat Endpoint - With Conversation History Support
+// Chat Endpoint
 app.post('/chat', async (req, res) => {
   const { messages, userEmail } = req.body;
 
@@ -112,9 +113,7 @@ app.post('/chat', async (req, res) => {
 
     const aiResponse = await chatWithOpenAI(finalMessages);
 
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
-      'Kai’s stumped. Try again, mate.';
-
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 'Kai’s stumped. Try again, mate.';
     const updatedCount = await updatePromptCount(userEmail);
 
     return res.json({ reply, promptCount: updatedCount });
@@ -149,9 +148,7 @@ app.post('/generate-quote', async (req, res) => {
 
     const aiResponse = await chatWithOpenAI(finalMessages);
 
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
-      'Unable to generate quote. Try again.';
-
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 'Unable to generate quote. Try again.';
     return res.json({ reply });
 
   } catch (error) {
