@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const { Configuration, OpenAIApi } = require('openai');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -19,6 +20,7 @@ const openai = new OpenAIApi(new Configuration({
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+app.use(helmet());
 app.use(cors({ origin: ['https://ask.kaymarconstruction.com'], credentials: true }));
 app.use(express.json());
 
@@ -32,7 +34,7 @@ async function getUser(email) {
 
   if (error || !data) {
     const plan_tier = email === 'mark@kaymarconstruction.com' ? 'Pro' : 'Free';
-    const prompt_count = plan_tier === 'Pro' ? Infinity : 0;
+    const prompt_count = plan_tier === 'Pro' ? null : 0;
 
     const { data: newUser, error: insertError } = await supabase
       .from('users')
@@ -40,17 +42,17 @@ async function getUser(email) {
       .select()
       .single();
 
-    if (insertError) throw new Error(`Failed to create new user: ${insertError.message}`);
+    if (insertError) throw new Error(`Failed to create user: ${insertError.message}`);
     return newUser;
   }
 
-  // Auto-upgrade Mark to Pro if not already
+  // Auto-upgrade for Mark
   if (email === 'mark@kaymarconstruction.com' && data.plan_tier !== 'Pro') {
     await supabase.from('users')
-      .update({ plan_tier: 'Pro', prompt_count: Infinity })
+      .update({ plan_tier: 'Pro', prompt_count: null })
       .eq('email', email);
     data.plan_tier = 'Pro';
-    data.prompt_count = Infinity;
+    data.prompt_count = null;
   }
 
   return data;
@@ -58,12 +60,11 @@ async function getUser(email) {
 
 async function updatePromptCount(email) {
   const user = await getUser(email);
-  if (user.plan_tier === 'Pro') return user.prompt_count; // Unlimited for Pro users
+  if (user.plan_tier === 'Pro') return user.prompt_count;
 
   const newCount = (user.prompt_count || 0) + 1;
 
-  const { error } = await supabase
-    .from('users')
+  const { error } = await supabase.from('users')
     .update({ prompt_count: newCount })
     .eq('email', email);
 
@@ -71,13 +72,27 @@ async function updatePromptCount(email) {
   return newCount;
 }
 
+// OpenAI Chat Request with Retry
+async function chatWithOpenAI(messages, retries = 2) {
+  try {
+    return await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages,
+      max_tokens: parseInt(process.env.MAX_TOKENS, 10) || 700,
+      temperature: 0.3,
+    });
+  } catch (err) {
+    if (retries > 0) return chatWithOpenAI(messages, retries - 1);
+    throw err;
+  }
+}
+
 // Chat Endpoint
 app.post('/chat', async (req, res) => {
   const { messages, userEmail } = req.body;
-  console.log('Received Chat Request:', { userEmail, messages });
 
   if (!userEmail) return res.status(400).json({ error: 'Missing userEmail.' });
-  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+  if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'No conversation history provided.' });
   }
 
@@ -89,87 +104,76 @@ app.post('/chat', async (req, res) => {
 
     const systemPrompt = {
       role: 'system',
-      content: `You are Kai Marlow, a seasoned carpenter and building consultant from Frankston, VIC, Australia.
-
+      content: `You are Kai Marlow, a seasoned carpenter from Frankston, VIC, Australia.
 - Keep answers short, clear, and practical.
 - Use Aussie lingo like "Righto mate" or "Here’s the go".
-- Recommend suppliers: Bunnings, Bowens, Reece, Middies when relevant.
-- Keep it cheeky but helpful and avoid overexplaining.`,
+- Recommend Bunnings, Bowens, Reece, Middies when relevant.
+- Keep it cheeky but helpful. Avoid overexplaining.`,
     };
 
-    const cleanedMessages = messages.filter(m => m.role !== 'system');
-    const finalMessages = [systemPrompt, ...cleanedMessages];
+    const finalMessages = [systemPrompt, ...messages.filter(m => m.role !== 'system')];
 
-    const aiResponse = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: finalMessages,
-      max_tokens: 700,
-      temperature: 0.3,
-    });
-
+    const aiResponse = await chatWithOpenAI(finalMessages);
     const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 'Kai’s stumped. Try again, mate.';
 
     const updatedCount = await updatePromptCount(userEmail);
     return res.json({ reply, promptCount: updatedCount });
 
   } catch (error) {
-    console.error('Chat Error:', error);
+    console.error('Chat Error:', error.message);
     return res.status(500).json({ reply: 'Kai hit a snag. Try again shortly.' });
   }
 });
 
-// Quote Generator
+// Quote Generator Endpoint
 app.post('/generate-quote', async (req, res) => {
   const { messages } = req.body;
 
-  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+  if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'No project details provided.' });
   }
 
   try {
     const systemPrompt = {
       role: 'system',
-      content: `
-You are Kai Marlow, an expert estimator.
-
-- Output ONLY a clean dot-point materials list. 
+      content: `You are Kai Marlow, an expert estimator.
+- Output ONLY a clean dot-point materials list.
 - Example:
   - 10x Treated Pine Posts 90x90 H4 (3.0m)
   - 24x MGP10 Beams 190x45 (4.2m)
-- Assume VIC standards. No prices unless asked. 
+- Assume VIC standards. No prices unless asked.
 - Keep it under 200 words. No chit-chat.`,
     };
 
-    const cleanedMessages = messages.filter(m => m.role !== 'system');
-    const finalMessages = [systemPrompt, ...cleanedMessages];
+    const finalMessages = [systemPrompt, ...messages.filter(m => m.role !== 'system')];
 
-    const aiResponse = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: finalMessages,
-      max_tokens: 1000,
-      temperature: 0.3,
-    });
-
+    const aiResponse = await chatWithOpenAI(finalMessages);
     const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 'Unable to generate quote. Try again.';
 
     return res.json({ reply });
 
   } catch (error) {
-    console.error('Quote Generation Error:', error);
+    console.error('Quote Generation Error:', error.message);
     return res.status(500).json({ reply: 'Kai hit a snag. Try again later.' });
   }
 });
 
-// Suppliers Fetch
+// Suppliers Endpoint
 app.get('/suppliers', async (req, res) => {
   try {
     const { data, error } = await supabase.from('suppliers').select('*');
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ suppliers: data });
   } catch (err) {
-    console.error('Supplier Fetch Error:', err);
+    console.error('Suppliers Fetch Error:', err.message);
     return res.status(500).json({ error: 'Could not fetch suppliers.' });
   }
+});
+
+// Centralized Error Handler (optional if more routes are added)
+app.use((err, req, res, next) => {
+  console.error('Unhandled Error:', err.message);
+  res.status(500).json({ error: 'An unexpected error occurred.' });
 });
 
 app.listen(PORT, () => {
