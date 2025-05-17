@@ -30,11 +30,13 @@ const MAX_TOKENS = parseInt(process.env.MAX_TOKENS, 10) || 700;
 // Helpers
 async function getUser(email) {
   if (!email) throw new Error('User email is required.');
+
   const { data, error } = await supabase.from('users').select('*').eq('email', email).single();
 
   if (error || !data) {
     const plan_tier = email === 'mark@kaymarconstruction.com' ? 'Pro' : 'Free';
     const prompt_count = plan_tier === 'Pro' ? null : 0;
+
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert([{ email, plan_tier, prompt_count, created_at: new Date().toISOString() }])
@@ -45,7 +47,6 @@ async function getUser(email) {
     return newUser;
   }
 
-  // Auto-upgrade Mark
   if (email === 'mark@kaymarconstruction.com' && data.plan_tier !== 'Pro') {
     await supabase.from('users')
       .update({ plan_tier: 'Pro', prompt_count: null })
@@ -82,7 +83,7 @@ async function chatWithOpenAI(messages, retries = 2) {
   }
 }
 
-// Chat Endpoint
+// Chat Endpoint - With Conversation History Support
 app.post('/chat', async (req, res) => {
   const { messages, userEmail } = req.body;
 
@@ -93,6 +94,7 @@ app.post('/chat', async (req, res) => {
 
   try {
     const user = await getUser(userEmail);
+
     if (user.plan_tier === 'Free' && user.prompt_count >= PROMPT_LIMIT_FREE) {
       return res.json({ reply: 'You’ve hit your free prompt limit, mate! Time for an upgrade.' });
     }
@@ -109,9 +111,12 @@ app.post('/chat', async (req, res) => {
     const finalMessages = [systemPrompt, ...messages.filter(m => m.role !== 'system')];
 
     const aiResponse = await chatWithOpenAI(finalMessages);
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 'Kai’s stumped. Try again, mate.';
+
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
+      'Kai’s stumped. Try again, mate.';
 
     const updatedCount = await updatePromptCount(userEmail);
+
     return res.json({ reply, promptCount: updatedCount });
 
   } catch (error) {
@@ -120,7 +125,7 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// Quote Generator
+// Quote Generator Endpoint
 app.post('/generate-quote', async (req, res) => {
   const { messages } = req.body;
 
@@ -143,7 +148,9 @@ app.post('/generate-quote', async (req, res) => {
     const finalMessages = [systemPrompt, ...messages.filter(m => m.role !== 'system')];
 
     const aiResponse = await chatWithOpenAI(finalMessages);
-    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 'Unable to generate quote. Try again.';
+
+    const reply = aiResponse?.data?.choices?.[0]?.message?.content?.trim() || 
+      'Unable to generate quote. Try again.';
 
     return res.json({ reply });
 
